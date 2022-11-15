@@ -128,7 +128,7 @@ NBS_subarea <- c(81, 70, 71, 99) #NBS stratum numbers; added 99 to indicate 2018
 
 # do you want model-based or design-based data?
 data_type <- (readline(prompt = "Do you want model-based or design-based data (Enter: MB or DB): "))
-db
+mb
 if(data_type == "MB"){data_type <- "mb"}
 if(data_type == "DB"){data_type <-  "db"}
 
@@ -136,18 +136,17 @@ if(data_type == "DB"){data_type <-  "db"}
 strat_meta_year <- as.numeric(readline(prompt = "Which statum year do you want to use (Enter: 2010, 2019, or 2022): "))
 
 2022 
-## 2010: default for testing to match Stan's code
+## 2010: for testing to match Stan's code
 ## 2019: recent update of strata- used for 2021 assessment
-## 2022: latest update and strata to use for current assessments
+## 2022: DEFAULT: latest update and strata to use for current assessments
 
 
 # you should always use the most current data.
 # if you wish to save a stable copy of your current data, use the following function:
 
 stable_data_save <- readline(prompt = "Do you want to save a copy of your raw data (Enter: y for YES or n for NO): ")
-n
-#y 
-# this is the default option, to save data, enter "y"
+y
+# this is the default option, to skip data save, enter "n"
 
 # folders -----------------------------------------------------------------
 dir_thisyr <- paste0(current_year,"_", data_type, "_data_", strat_meta_year, "_strata")
@@ -491,6 +490,8 @@ ddc_alk <- ddc_alk_all$ddc_age
 # sqrt(diag(biomass))/mean(diag(biomass))
 
 #### stan's bootstrapping method: ####
+if(data_type == 'db')
+{
 corr_sa <-  function(aa,ab){
   
   #calculates corrected sa by tow (corrected backscatter by tow)
@@ -682,7 +683,8 @@ biomass_mean <- bioms %>% as_tibble() %>% summarise_if(is.numeric, mean)
 colnames(biomass_mean) <- unique(ddc_table$year)
 cv <- sqrt(diag(var_covar_stan))/biomass_mean
 range(cv) #range should be 5-20%
-if(max(range(cv)) > 0.2){print("YOUR CV IS > 20% PLEASE RE-CHECK")}
+if(max(range(cv)) > 0.2){print("YOUR CV IS > 20% PLEASE CHECK")}
+}
 
 # convert new 5 -----------------------------------------------------------
 
