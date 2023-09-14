@@ -102,14 +102,15 @@ odbcGetInfo(channel)
 # season-specific fixed inputs --------------------------------------------
 
 # # you need to UPDATE this section each year with the current cruise and vessels
-current_year <- year(today())
+# current_year <- year(today())
+current_year <- 2022  # choose a different year when debugging
 prev_year <- current_year - 1
 cruise <- paste0(current_year, "01", ",", current_year, "02")
 vessel_code <- paste0(162, "," , 94) #list each vessel, separated by commas
 vessel_nums <- c(162, 94)
 
 # get cruise id from here
-query_command <- paste0(" select * from race_data.cruises where cruise in (", cruise,");")
+query_command <- paste0(" select * from race_data.v_cruises where cruise in (", cruise,");")
 cruise_info <- sqlQuery(channel, query_command) %>% 
   as_tibble() %>% 
   clean_names()
@@ -135,7 +136,7 @@ if(data_type == "DB"){data_type <-  "db"}
 # which strata_metadata do you want to use?
 strat_meta_year <- as.numeric(readline(prompt = "Which statum year do you want to use (Enter: 2010, 2019, or 2022): "))
 
-2022 
+2022
 ## 2010: for testing to match Stan's code
 ## 2019: recent update of strata- used for 2021 assessment
 ## 2022: DEFAULT: latest update and strata to use for current assessments
@@ -151,6 +152,7 @@ y
 # folders -----------------------------------------------------------------
 dir_thisyr <- paste0(current_year,"_", data_type, "_data_", strat_meta_year, "_strata")
 
+#Only run when starting from scratch
 dir.create(here::here("output",dir_thisyr), showWarnings = FALSE)
 
 # * pollock data ----------------------------------------------------------
@@ -166,7 +168,7 @@ slope_survey <- slope_survey_d()
 ##   but you only have to run it once after the survey data are finalized (but it doesn't hurt anything if you run it again)
 ## you can run that code by un-commenting and running the following line:
 
-# RODBC::sqlQuery(channel, "BEGIN safe.UPDATE_SURVEY; END;")
+RODBC::sqlQuery(channel, "BEGIN safe.UPDATE_SURVEY; END;")
 
 ## now you can get the haul data:
 ## you pull different hauls depending on whether you are running for model-based or design-based indices/comps
@@ -907,6 +909,8 @@ if(data_type == 'mb')
 # Table requests by others ------------------------------------------------
 
 # ddc age comps by sex
+#Only run this when starting from scratch to create directory
+dir.create(here::here("output",'other_requests'), showWarnings = FALSE)
 write_csv(ddc_alk_all$ddc_age_sex, here("output", "other_requests", paste0("age_length_key_full_with_sex_densdep_corrected", current_year, ".csv")))
 # drive_upload(ddc_alk_all$ddc_age_sex, 
 #              path = (as_id("1FXW5eaQh28ZnmY83mJHCWnWRmSJR9lGL")), 
