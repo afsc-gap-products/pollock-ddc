@@ -163,14 +163,14 @@ get_agecomps <- function(specimen, pop_lengths)
   # CIA: check these (stratum included or summarized over- compare to stan's code)
   # agecomp8: 
   age_comps_summary_EBS <- age_comps %>% 
-    dplyr::filter(subarea != 0 && !is.na(subarea)) %>% #filter out NBS and NAs
+    dplyr::filter(!is.na(subarea)) %>% #filter out NBS and NAs
     group_by(year, sex, age) %>% 
     summarise(pop_sum = sum(population_num_ha),
               mean_length_sum = sum(length*population_num_ha)/sum(population_num_ha))
   
   # agecomp9:
   age_comp_sqr_EBS <- full_join(age_comps, age_comps_summary_EBS) %>% 
-    dplyr::filter(subarea != 0 && !is.na(subarea)) %>% #filter out NBS and NAs
+    dplyr::filter(!is.na(subarea)) %>% #filter out NBS and NAs
     mutate(sqr_age_comps = pop_aal * ((length-mean_length_sum)^2) )
   
   # agecomp10:
