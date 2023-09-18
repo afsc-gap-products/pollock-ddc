@@ -145,8 +145,8 @@ haul_data_d <- function(data_selection = "db", nbs_subarea = c(81, 70, 71), slop
                                       and a.stratum is not null and a.stationid is not null
                                order by a.cruise, a.vessel, a.haul;")) %>% 
     as_tibble() %>% 
-    clean_names() %>% 
-    dplyr::filter(year == 2018)
+    clean_names()  
+    # dplyr::filter(year == 2018)
   
   bad_hauls_MB <- bind_rows(bad_hauls, bad18_hauls)
   
