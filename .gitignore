@@ -1,7 +1,8 @@
 # Ignore generated R and Rstudio files
 .Rhistory
 .rproj*
-
-# Ignore data folder
-data/
 .Rproj.user
+
+# Ignore data and outputs
+data/
+output/
