@@ -396,7 +396,7 @@ ddc_al_key <- get_al_key(pollock_specimen, ddc_length_comps$pollock_length_comp)
 
 
 # ddc numbers at age by year and station ----------------------------------
-
+# SNW: This is where it starts taking a long time!
 
 ddc_alk_all <- ddc_age_comps_f(ddc_table,
                               age_comp_full_key,  #CIA: Stan uses UNCORRECTED aal key
