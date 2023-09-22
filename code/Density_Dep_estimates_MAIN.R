@@ -102,8 +102,8 @@ odbcGetInfo(channel)
 # season-specific fixed inputs --------------------------------------------
 
 # # you need to UPDATE this section each year with the current cruise and vessels
-# current_year <- year(today())
-current_year <- 2022  # choose a different year when debugging
+current_year <- year(today())
+# current_year <- 2022  # choose a different year when debugging
 prev_year <- current_year - 1
 cruise <- paste0(current_year, "01", ",", current_year, "02")
 vessel_code <- paste0(162, "," , 94) #list each vessel, separated by commas
@@ -396,7 +396,7 @@ ddc_al_key <- get_al_key(pollock_specimen, ddc_length_comps$pollock_length_comp)
 
 
 # ddc numbers at age by year and station ----------------------------------
-
+# SNW: this is where it starts taking a while
 
 ddc_alk_all <- ddc_age_comps_f(ddc_table,
                               age_comp_full_key,  #CIA: Stan uses UNCORRECTED aal key
