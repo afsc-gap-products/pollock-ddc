@@ -129,7 +129,7 @@ NBS_subarea <- c(81, 70, 71, 99) #NBS stratum numbers; added 99 to indicate 2018
 
 # do you want model-based or design-based data?
 data_type <- (readline(prompt = "Do you want model-based or design-based data (Enter: MB or DB): "))
-mb
+db
 if(data_type == "MB"){data_type <- "mb"}
 if(data_type == "DB"){data_type <-  "db"}
 
@@ -168,7 +168,7 @@ slope_survey <- slope_survey_d()
 ##   but you only have to run it once after the survey data are finalized (but it doesn't hurt anything if you run it again)
 ## you can run that code by un-commenting and running the following line:
 
-RODBC::sqlQuery(channel, "BEGIN safe.UPDATE_SURVEY; END;")
+# RODBC::sqlQuery(channel, "BEGIN safe.UPDATE_SURVEY; END;")
 
 ## now you can get the haul data:
 ## you pull different hauls depending on whether you are running for model-based or design-based indices/comps
@@ -237,7 +237,7 @@ if(data_type == 'db')
 {
   pollock_length_nbs <- length_data_d(hauljoins = valid_hauljoins_nbs)
   pollock_raw_length_nbs <- pollock_length_nbs$pollock_raw_length
-  pollock_raw_length_ebs <- left_join(pollock_raw_length, hauls_survey) %>% 
+  pollock_raw_length_ebs <- cross_join(pollock_raw_length, hauls_survey) %>% 
     dplyr::filter(!stratum %in% NBS_subarea)
 }
 
