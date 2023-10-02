@@ -1,7 +1,12 @@
-# Ignore generated R and Rstudio files
+# Ignore generated R, Rstudio, macOS files
 .Rhistory
 .Rproj.user
+.Rprofile
+renv/
+renv.*
+.DS_Store  
 
 # Ignore data folder
 data/
 output/
+*.Rdata
