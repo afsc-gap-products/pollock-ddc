@@ -106,8 +106,8 @@ current_year <- year(today())
 # current_year <- 2022  # choose a different year when debugging
 prev_year <- current_year - 1
 cruise <- paste0(current_year, "01", ",", current_year, "02")
-vessel_code <- paste0(162, "," , 94) #list each vessel, separated by commas
-vessel_nums <- c(162, 94)
+vessel_code <- paste0(162, "," , 134) #list each vessel, separated by commas
+vessel_nums <- c(162, 134)
 
 # get cruise id from here
 query_command <- paste0(" select * from race_data.v_cruises where cruise in (", cruise,");")
