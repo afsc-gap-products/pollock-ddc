@@ -237,7 +237,7 @@ if(data_type == 'db')
 {
   pollock_length_nbs <- length_data_d(hauljoins = valid_hauljoins_nbs)
   pollock_raw_length_nbs <- pollock_length_nbs$pollock_raw_length
-  pollock_raw_length_ebs <- cross_join(pollock_raw_length, hauls_survey) %>% 
+  pollock_raw_length_ebs <- left_join(pollock_raw_length, hauls_survey) %>% 
     dplyr::filter(!stratum %in% NBS_subarea)
 }
 

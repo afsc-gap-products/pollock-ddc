@@ -205,18 +205,17 @@ length_data_d <- function(hauljoins)
   pollock_length <- sqlQuery(channel, query_command) %>% 
     as_tibble() %>% 
     clean_names() %>% 
-    filter(hauljoin %in% valid_hauljoins)
+    filter(hauljoin %in% hauljoins)
   
   
-  query_command <- paste0(" select c.VESSEL, c.CRUISE, b.HAUL, a.LENGTH_TYPE, 
-                            a.HAUL, a.SPECIES_CODE, a.SEX, a.LENGTH,
-                            a.FREQUENCY, b.CRUISE 
-                            from racebase.LENGTH a, racebase.HAUL b, racebase.CRUISE c
-                            where b.CRUISE in (", cruise_id, ") and a.HAUL=b.HAUL 
-                            and a.SPECIES_CODE in (21740,21741)
-                            and c.VESSEL in (", vessel_code, ") 
-                            and b.CRUISE=c.CRUISE
-                            order by a.LENGTH;")
+  query_command <- paste0(" select c.vessel_id vessel, d.cruise, b.haul, a.LENGTH_ID, a.HAUL_ID, a.SPECIES_CODE, a.SEX, a.LENGTH,
+                            a.FREQUENCY, b.cruise_id 
+                            from race_data.lengths a, race_data.hauls b, race_data.vessels c, race_data.cruises d
+                            where b.cruise_id in (", cruise_id, ") and a.haul_id=b.haul_id 
+                            and a.species_code in (21740,21741)
+                            and c.vessel_id in (", vessel_code, ") and c.vessel_id=d.vessel_id 
+                            and b.cruise_id=d.cruise_id
+                            order by a.length_id;")
   
   pollock_raw_length <- sqlQuery(channel, query_command) %>% 
     as_tibble() %>% 
