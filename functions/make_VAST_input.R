@@ -118,7 +118,7 @@ make_VAST_input <- function(hauls = hauls_survey,
     filter(!cruisejoin %in% slope_survey$cruisejoin) %>% 
     full_join(fill_zeroes) %>% 
     mutate(age_cpue_corr = if_else(is.na(age_cpue_corr), 0, age_cpue_corr)) %>% 
-    rename(Catch_KG = age_cpue_corr, 
+    rename(Catch_KG = age_cpue_corr,  # TODO: SNW - rename this column - it's numbers, not biomass!
            Year= year, 
            Age = age, 
            Lat = start_latitude,

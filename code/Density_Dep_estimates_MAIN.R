@@ -1,9 +1,10 @@
 # This code produces density-dependent estimates for the Bering Sea Pollock assessment
 # This code is converted from SQL files by Stan Kotwicki
 # Author: Caitlin I. Allen Akselrud
-# Contact: caitlin.allen_akselrud@noaa.gov
+# Maintained by: Sophia N. Wassermann
+# Contact: sophia.wassermann@noaa.gov
 # Date created: 2020.08.24
-# Date updated: 2021.08.25
+# Date updated: 2023.10.30
 
 
 # notes -------------------------------------------------------------------
@@ -13,7 +14,6 @@
 #   tables generated with fpc have ending '_c'; DO NOT USE
 # tables for index corrected density dependence have ending '_n'
 
-
 # there are sections in this code that ask for a user input. 
 #   # If you run code from the top, it will run default settings
 #   # Please PAY ATTENTION to ensure you are using the setting you need
@@ -21,6 +21,12 @@
 # age-length keys (alk) methods may need updating in 2023 assessment
 #     # Correa et al 2020 CJFAS
 #     # GitHub: https://github.com/gmoroncorrea/STageCompsEstimation 
+
+# While at the moment (2023.10.30) the age comp input for VAST has CPUE in a
+# column named "CATCH_KG", these are actually numbers, not biomass. This will
+# need to be updated for 2024. See 
+#     # ddc_age_comps_f() in ddc_age_comps.R and
+#     # make_VAST_input() in make_VAST_input.R for more information.
 
 # ASSESSMENT TABLES -------------------------------------------------------
 
@@ -129,7 +135,7 @@ NBS_subarea <- c(81, 70, 71, 99) #NBS stratum numbers; added 99 to indicate 2018
 
 # do you want model-based or design-based data?
 data_type <- (readline(prompt = "Do you want model-based or design-based data (Enter: MB or DB): "))
-db
+mb
 if(data_type == "MB"){data_type <- "mb"}
 if(data_type == "DB"){data_type <-  "db"}
 
