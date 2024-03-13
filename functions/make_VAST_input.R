@@ -1,8 +1,9 @@
 # Make data formatted for VAST input
 # Author: Caitlin I. Allen Akselrud
-# Contact: caitlin.allen_akselrud@noaa.gov
+# Maintained by: Sophia N. Wassermann
+# Contact: sophia.wassermann@noaa.gov
 # Date created: 2022.06.02
-# Date updated: 2022.06.02
+# Date updated: 2024.03.13
 
 make_VAST_input <- function(hauls = hauls_survey,
                             spec = pollock_specimen,
@@ -118,7 +119,7 @@ make_VAST_input <- function(hauls = hauls_survey,
     filter(!cruisejoin %in% slope_survey$cruisejoin) %>% 
     full_join(fill_zeroes) %>% 
     mutate(age_cpue_corr = if_else(is.na(age_cpue_corr), 0, age_cpue_corr)) %>% 
-    rename(Catch_KG = age_cpue_corr,  # TODO: SNW - rename this column - it's numbers, not biomass!
+    rename(CPUE_num = age_cpue_corr, 
            Year= year, 
            Age = age, 
            Lat = start_latitude,

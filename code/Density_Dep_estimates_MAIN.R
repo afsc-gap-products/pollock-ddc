@@ -4,7 +4,7 @@
 # Maintained by: Sophia N. Wassermann
 # Contact: sophia.wassermann@noaa.gov
 # Date created: 2020.08.24
-# Date updated: 2023.10.30
+# Date updated: 2024.03.13
 
 
 # notes -------------------------------------------------------------------
@@ -21,12 +21,6 @@
 # age-length keys (alk) methods may need updating in 2023 assessment
 #     # Correa et al 2020 CJFAS
 #     # GitHub: https://github.com/gmoroncorrea/STageCompsEstimation 
-
-# While at the moment (2023.10.30) the age comp input for VAST has CPUE in a
-# column named "CATCH_KG", these are actually numbers, not biomass. This will
-# need to be updated for 2024. See 
-#     # ddc_age_comps_f() in ddc_age_comps.R and
-#     # make_VAST_input() in make_VAST_input.R for more information.
 
 # ASSESSMENT TABLES -------------------------------------------------------
 
@@ -108,8 +102,8 @@ odbcGetInfo(channel)
 # season-specific fixed inputs --------------------------------------------
 
 # # you need to UPDATE this section each year with the current cruise and vessels
-current_year <- year(today())
-# current_year <- 2022  # choose a different year when debugging
+# current_year <- year(today())
+current_year <- 2023  # choose a different year when debugging, or for hindcast
 prev_year <- current_year - 1
 cruise <- paste0(current_year, "01", ",", current_year, "02")
 vessel_code <- paste0(162, "," , 134) #list each vessel, separated by commas
