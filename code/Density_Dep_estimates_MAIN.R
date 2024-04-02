@@ -14,7 +14,6 @@
 #   tables generated with fpc have ending '_c'; DO NOT USE
 # tables for index corrected density dependence have ending '_n'
 
-
 # there are sections in this code that ask for a user input. 
 #   # If you run code from the top, it will run default settings
 #   # Please PAY ATTENTION to ensure you are using the setting you need
@@ -108,8 +107,8 @@ odbcGetInfo(channel)
 # season-specific fixed inputs --------------------------------------------
 
 # # you need to UPDATE this section each year with the current cruise and vessels
-# current_year <- year(today())
-current_year <- 2023  # choose a different year when debugging or hindcasting
+current_year <- year(today())
+# current_year <- 2022  # choose a different year when debugging
 prev_year <- current_year - 1
 cruise <- paste0(current_year, "01", ",", current_year, "02")
 vessel_code <- paste0(162, "," , 134) #list each vessel, separated by commas
@@ -135,7 +134,7 @@ NBS_subarea <- c(81, 70, 71, 99) #NBS stratum numbers; added 99 to indicate 2018
 
 # do you want model-based or design-based data?
 data_type <- (readline(prompt = "Do you want model-based or design-based data (Enter: MB or DB): "))
-db
+mb
 if(data_type == "MB"){data_type <- "mb"}
 if(data_type == "DB"){data_type <-  "db"}
 
@@ -243,7 +242,7 @@ if(data_type == 'db')
 {
   pollock_length_nbs <- length_data_d(hauljoins = valid_hauljoins_nbs)
   pollock_raw_length_nbs <- pollock_length_nbs$pollock_raw_length
-  pollock_raw_length_ebs <- cross_join(pollock_raw_length, hauls_survey) %>% 
+  pollock_raw_length_ebs <- left_join(pollock_raw_length, hauls_survey) %>% 
     dplyr::filter(!stratum %in% NBS_subarea)
 }
 
