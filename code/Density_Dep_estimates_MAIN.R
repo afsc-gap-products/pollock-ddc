@@ -1,9 +1,10 @@
 # This code produces density-dependent estimates for the Bering Sea Pollock assessment
 # This code is converted from SQL files by Stan Kotwicki
 # Author: Caitlin I. Allen Akselrud
-# Contact: caitlin.allen_akselrud@noaa.gov
+# Maintained by: Sophia N. Wassermann
+# Contact: sophia.wassermann@noaa.gov
 # Date created: 2020.08.24
-# Date updated: 2021.08.25
+# Date updated: 2024.04.02
 
 
 # notes -------------------------------------------------------------------
@@ -85,14 +86,19 @@ functions <- list.files(here::here("functions"))
 purrr::walk(functions, ~ source(here::here("functions", .x)))
 
 # Connect to database -----------------------------------------------------
-
+# Connection established either through saved username and password, or by entering directly
 # make sure you are connected to VPN first (and have Oracle database login)
-
-channel <- odbcConnect(dsn = "AFSC", 
-                       uid = rstudioapi::showPrompt(title = "Username", 
-                                                    message = "Oracle Username", default = ""), 
-                       pwd = rstudioapi::askForPassword("enter password"),
-                       believeNRows = FALSE)
+if (file.exists("Z:/Projects/ConnectToOracle.R")) {
+  source("Z:/Projects/ConnectToOracle.R")
+} else {
+  # For those without a ConnectToOracle file
+  channel <- odbcConnect(dsn = "AFSC", 
+                         uid = rstudioapi::showPrompt(title = "Username", 
+                                                      message = "Oracle Username", 
+                                                      default = ""), 
+                         pwd = rstudioapi::askForPassword("Enter Password"),
+                         believeNRows = FALSE)
+}
 
 ## checks to see if connection has been established
 odbcGetInfo(channel)
@@ -102,8 +108,8 @@ odbcGetInfo(channel)
 # season-specific fixed inputs --------------------------------------------
 
 # # you need to UPDATE this section each year with the current cruise and vessels
-current_year <- year(today())
-# current_year <- 2022  # choose a different year when debugging
+# current_year <- year(today())
+current_year <- 2023  # choose a different year when debugging or hindcasting
 prev_year <- current_year - 1
 cruise <- paste0(current_year, "01", ",", current_year, "02")
 vessel_code <- paste0(162, "," , 134) #list each vessel, separated by commas
