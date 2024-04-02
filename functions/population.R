@@ -15,7 +15,7 @@ population <- function(ebs_strata, avg_cpue)
   
   # CIA: check all for consistency/inconsistency with Stan's tables
   
-  # ebs_strata <- nw_strata
+  # ebs_strata <- all_strata
   # avg_cpue <- cpue_info$avg_cpue_yr_strat
   # 
   strat_area <- ebs_strata %>% 

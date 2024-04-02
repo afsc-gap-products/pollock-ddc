@@ -238,6 +238,7 @@ metadata_d <- function(cruise_id = cruise, vessel_code_id = vessel_code, pollock
     as_tibble() %>% 
     clean_names() %>% 
     mutate(year = year(start_date)) %>% 
+    mutate(vessel = as.numeric(vessel)) %>%
     dplyr::select(vessel, year) %>% 
     distinct()
   
