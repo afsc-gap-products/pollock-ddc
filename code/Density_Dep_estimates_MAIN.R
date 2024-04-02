@@ -927,19 +927,25 @@ write_csv(ddc_alk_all$ddc_age_sex, here("output", "other_requests", paste0("age_
 
 
 # length comps with haul joins
-ddc_cpue_length_table_Ivonne <- full_join(ddc_length_comps$sizecomp_cpue_stn, hauls_survey) %>%  #, by = c("vessel", "year", "haul"))
-  select(hauljoin, vessel, year, haul, start_latitude, start_longitude, stratum, stationid, sex, length, cpue_length_num_ha)
+# ddc_cpue_length_table_Ivonne <- full_join(ddc_length_comps$sizecomp_cpue_stn, hauls_survey) %>%  #, by = c("vessel", "year", "haul"))
+#   select(hauljoin, vessel, year, haul, start_latitude, start_longitude, stratum, stationid, sex, length, cpue_length_num_ha)
+# 
+# ddc_table_clean <- ddc_table %>% 
+#   dplyr::select(-bs_stn_sum, -stn_mean_corr, -stn_sd_corr, -eff,
+#                 -distance_fished, -net_width, -gear_temperature, -weight,
+#                 -number_fish, -area_fished_ha) %>% 
+#   dplyr::rename(uncorrected_cpue_kg_ha = cpue_kg_ha,
+#                 uncorrected_cpue_num_ha = cpue_num_ha )
+# write_csv(ddc_table_clean, here("output", "other requests", paste0("index_year_stn_FEAST", current_year, ".csv")))
 
-ddc_table_clean <- ddc_table %>% 
-  dplyr::select(-bs_stn_sum, -stn_mean_corr, -stn_sd_corr, -eff,
-                -distance_fished, -net_width, -gear_temperature, -weight,
-                -number_fish, -area_fished_ha) %>% 
-  dplyr::rename(uncorrected_cpue_kg_ha = cpue_kg_ha,
-                uncorrected_cpue_num_ha = cpue_num_ha )
-
-write_csv(ddc_table_clean, here("output", "other_requests", paste0("index_year_stn_FEAST", current_year, ".csv")))
+# Biomass-by-length by subarea (for Ivonne) - SNW 2024-04-02
+ddc_biom_by_length <- left_join(ddc_length_comps$pollock_length_comp_biomass, ddc_length_comps$stratum_use) %>%
+  filter(!is.na(cpue_prop)) %>%
+  select(-cpue_prop, -pop_prop_num_ha, -prop_area)
+ddc_biom_by_length <- ddc_biom_by_length[, c(1, 6, 3, 4, 5)]
+write_csv(ddc_biom_by_length, here("output", "other requests", paste0("biomass_by_length_stratum", current_year, ".csv")))
 
 # total numbers by year, station, and 1 cm length bin
 ddc_cpue_length_table %<>%
   rename(ddc_cpue_length_num_ha = cpue_length_num_ha)
-write_csv(ddc_cpue_length_table, here("output", "other_requests", paste0("length_numbers_year_stn_FEAST", current_year, ".csv")))
+write_csv(ddc_cpue_length_table, here("output", "other requests", paste0("length_numbers_year_stn_FEAST", current_year, ".csv")))

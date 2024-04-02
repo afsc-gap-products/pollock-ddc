@@ -94,10 +94,10 @@ length_comp_f <- function(length, hauls, catch, stratum, biomass_kg, biomass_mt)
   # CIA: check some of the joins here- problems with some subareas as NAs
   
   # CIA: added section for cpue biomass at length (kg/ha) (on 12/16)
-  # pollock_sizecomp_pop_weight <- prop_cpue_length %>% 
-  #   dplyr::select(-cpue_subarea_ratio_no_ha, -sum_cpue_subarea_no_ha ) %>% 
-  #   left_join(dplyr::select(biomass_kg, year, subarea, biomass_kg_ha )) %>% 
-  #   mutate(pop_prop_num_ha = cpue_prop * biomass_kg_ha)
+  pollock_sizecomp_pop_weight <- prop_cpue_length %>%
+    dplyr::select(-cpue_subarea_ratio_no_ha, -sum_cpue_subarea_no_ha ) %>%
+    left_join(dplyr::select(biomass_kg, year, subarea, biomass_kg_ha )) %>%
+    mutate(pop_prop_num_ha = cpue_prop * biomass_kg_ha)
   
   
   # pollock_sizecomp_st_survey sums strata sizecomp into one sizecomp 
@@ -139,6 +139,7 @@ length_comp_f <- function(length, hauls, catch, stratum, biomass_kg, biomass_mt)
   print(paste("If your difference results are: NA, 0, integer(0), or numeric(0), you have passed this check"))
   
   return(list(pollock_length_comp = pollock_sizecomp_pop, 
-              # pollock_length_comp_biomass = pollock_sizecomp_pop_weight,
+              pollock_length_comp_biomass = pollock_sizecomp_pop_weight,
+              stratum_use = stratum_use,
               sizecomp_cpue_stn = pollock_sizecomp)) #CIA: which tables needed to return vs. needed as output to .csv?
 }
