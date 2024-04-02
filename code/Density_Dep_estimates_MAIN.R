@@ -941,8 +941,9 @@ write_csv(ddc_alk_all$ddc_age_sex, here("output", "other_requests", paste0("age_
 # Biomass-by-length by subarea (for Ivonne) - SNW 2024-04-02
 ddc_biom_by_length <- left_join(ddc_length_comps$pollock_length_comp_biomass, ddc_length_comps$stratum_use) %>%
   filter(!is.na(cpue_prop)) %>%
-  select(-cpue_prop, -pop_prop_num_ha, -prop_area)
-ddc_biom_by_length <- ddc_biom_by_length[, c(1, 6, 3, 4, 5)]
+  mutate(biomass_kg = biomass_kg_ha * cpue_prop) %>%
+  select("year", "stratum", "sex", "length", "biomass_kg")
+ddc_biom_by_length <- ddc_biom_by_length[, -1]
 write_csv(ddc_biom_by_length, here("output", "other requests", paste0("biomass_by_length_stratum", current_year, ".csv")))
 
 # total numbers by year, station, and 1 cm length bin
