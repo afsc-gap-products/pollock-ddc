@@ -944,9 +944,9 @@ ddc_biom_by_length <- left_join(ddc_length_comps$pollock_length_comp_biomass, dd
   mutate(biomass_kg = biomass_kg_ha * cpue_prop) %>%
   select("year", "stratum", "sex", "length", "biomass_kg")
 ddc_biom_by_length <- ddc_biom_by_length[, -1]
-write_csv(ddc_biom_by_length, here("output", "other requests", paste0("biomass_by_length_stratum", current_year, ".csv")))
+write_csv(ddc_biom_by_length, here("output", "other_requests", paste0("biomass_by_length_stratum", current_year, ".csv")))
 
 # total numbers by year, station, and 1 cm length bin
 ddc_cpue_length_table %<>%
   rename(ddc_cpue_length_num_ha = cpue_length_num_ha)
-write_csv(ddc_cpue_length_table, here("output", "other requests", paste0("length_numbers_year_stn_FEAST", current_year, ".csv")))
+write_csv(ddc_cpue_length_table, here("output", "other_requests", paste0("length_numbers_year_stn_FEAST", current_year, ".csv")))
