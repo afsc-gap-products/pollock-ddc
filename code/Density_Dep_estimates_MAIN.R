@@ -108,9 +108,10 @@ odbcGetInfo(channel)
 
 # # you need to UPDATE this section each year with the current cruise and vessels
 current_year <- year(today())
-# current_year <- 2022  # choose a different year when debugging
+# current_year <- 2023  # choose a different year when debugging
 prev_year <- current_year - 1
-cruise <- paste0(current_year, "01", ",", current_year, "02")
+# cruise <- paste0(current_year, "01", ",", current_year, "02")
+cruise <- paste0(current_year, "01")
 vessel_code <- paste0(162, "," , 134) #list each vessel, separated by commas
 vessel_nums <- c(162, 134)
 
@@ -140,7 +141,6 @@ if(data_type == "DB"){data_type <-  "db"}
 
 # which strata_metadata do you want to use?
 strat_meta_year <- as.numeric(readline(prompt = "Which statum year do you want to use (Enter: 2010, 2019, or 2022): "))
-
 2022
 ## 2010: for testing to match Stan's code
 ## 2019: recent update of strata- used for 2021 assessment
@@ -158,7 +158,7 @@ y
 dir_thisyr <- paste0(current_year,"_", data_type, "_data_", strat_meta_year, "_strata")
 
 #Only run when starting from scratch
-dir.create(here::here("output",dir_thisyr), showWarnings = FALSE)
+dir.create(here::here("output",dir_thisyr))
 
 # * pollock data ----------------------------------------------------------
 # * don't include slope survey for VAST -------------------------------------
@@ -259,7 +259,7 @@ strata_metadata <- metadata_d(cruise_id = cruise, vessel_code_id = vessel_code,
 if(stable_data_save == "y") { raw_data_save <- save_raw_data(hauls_survey = hauls_survey, 
                                                              pollock_specimen = pollock_specimen, 
                                                              pollock_catch = pollock_catch,
-                                                             pollock_length = pollock_length, 
+                                                             pollock_length = pollock_length,
                                                              # ebs_shelf_cruise = ebs_shelf_cruise, 
                                                              metadata = strata_metadata) #, 
                                                              # strata_metadata_raw = strata_metadata_raw)
