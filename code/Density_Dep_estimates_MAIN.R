@@ -123,8 +123,10 @@ cruise_info <- sqlQuery(channel, query_command) %>%
 
 cruise_id_nums <- cruise_info %>% dplyr::filter(vessel_id %in% vessel_nums) 
 
-cruise_id <- paste0(cruise_id_nums$cruise_id[1], "," , cruise_id_nums$cruise_id[2], 
-                    "," , cruise_id_nums$cruise_id[3], "," , cruise_id_nums$cruise_id[4])
+# cruise_id <- paste0(cruise_id_nums$cruise_id[1], "," , cruise_id_nums$cruise_id[2], 
+#                     "," , cruise_id_nums$cruise_id[3], "," , cruise_id_nums$cruise_id[4])
+
+cruise_id <- paste0(cruise_id_nums$cruise_id[1], "," , cruise_id_nums$cruise_id[2])
 
 # NBS subarea stratum-- this shouldn't change too much, but is a fixed input
 NBS_subarea <- c(81, 70, 71, 99) #NBS stratum numbers; added 99 to indicate 2018 NBS emergency survey; diff survey methods
@@ -173,7 +175,7 @@ slope_survey <- slope_survey_d()
 ##   but you only have to run it once after the survey data are finalized (but it doesn't hurt anything if you run it again)
 ## you can run that code by un-commenting and running the following line:
 
-# RODBC::sqlQuery(channel, "BEGIN safe.UPDATE_SURVEY; END;")
+RODBC::sqlQuery(channel, "BEGIN safe.UPDATE_SURVEY; END;")
 
 ## now you can get the haul data:
 ## you pull different hauls depending on whether you are running for model-based or design-based indices/comps
