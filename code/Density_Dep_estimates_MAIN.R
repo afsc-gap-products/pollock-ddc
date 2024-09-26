@@ -110,8 +110,7 @@ odbcGetInfo(channel)
 current_year <- year(today())
 # current_year <- 2023  # choose a different year when debugging
 prev_year <- current_year - 1
-# cruise <- paste0(current_year, "01", ",", current_year, "02")
-cruise <- paste0(current_year, "01")
+cruise <- paste0(current_year, "01", ",", current_year, "02")
 vessel_code <- paste0(162, "," , 134) #list each vessel, separated by commas
 vessel_nums <- c(162, 134)
 
@@ -212,8 +211,7 @@ pollock_specimen <- specimen_data_d(hauls_survey_dat = hauls_survey)
 pollock_specimen_bad <- specimen_data_d(hauls_survey_dat = hauls_survey_bad)
 
 pollock_specimen_all <- pollock_specimen %>% 
-  bind_rows(pollock_specimen_bad) %>% 
-  dplyr::filter(!is.na(age))
+  bind_rows(pollock_specimen_bad)
 
 ## separate ebs and nbs specimen data for design-based age comps
 if(data_type == 'db')
