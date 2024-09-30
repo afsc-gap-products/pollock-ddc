@@ -211,7 +211,8 @@ pollock_specimen <- specimen_data_d(hauls_survey_dat = hauls_survey)
 pollock_specimen_bad <- specimen_data_d(hauls_survey_dat = hauls_survey_bad)
 
 pollock_specimen_all <- pollock_specimen %>% 
-  bind_rows(pollock_specimen_bad)
+  bind_rows(pollock_specimen_bad) %>%  
+  dplyr::filter(!is.na(age))  # SNW: comment out this line to create estimated ALK for current year
 
 ## separate ebs and nbs specimen data for design-based age comps
 if(data_type == 'db')
