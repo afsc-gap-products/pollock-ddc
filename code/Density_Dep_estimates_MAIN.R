@@ -4,8 +4,7 @@
 # Maintained by: Sophia N. Wassermann
 # Contact: sophia.wassermann@noaa.gov
 # Date created: 2020.08.24
-# Date updated: 2024.04.02
-
+# Date updated: 2024.12.04
 
 # notes -------------------------------------------------------------------
 
@@ -65,28 +64,22 @@
 
 # Dependencies ------------------------------------------------------------
 library(here)
-library(renv)
 library(tidyverse)
-library(magrittr)
-library(lubridate)
-library(modelr)
-library(janitor)
 library(RODBC)
-library(mgcv)
-library(googledrive)
-library(doParallel)
-registerDoParallel(detectCores()-2)
+library(janitor)
 
-# renv::init()
-# renv::snapshot()
-# renv::restore()
+# library(magrittr)
+# library(lubridate)
+# library(modelr)
+# library(mgcv)
+# library(googledrive)
 
-functions <- list.files(here::here("functions"))
-purrr::walk(functions, ~ source(here::here("functions", .x)))
+functions <- list.files(here("functions"))
+walk(functions, ~ source(here("functions", .x)))
 
 # Connect to database -----------------------------------------------------
 # Connection established either through saved username and password, or by entering directly
-# make sure you are connected to VPN first (and have Oracle database login)
+# make sure you are connected to VPN first (and have an AFSC Oracle login)
 if (file.exists("Z:/Projects/ConnectToOracle.R")) {
   source("Z:/Projects/ConnectToOracle.R")
 } else {
@@ -102,12 +95,9 @@ if (file.exists("Z:/Projects/ConnectToOracle.R")) {
 ## checks to see if connection has been established
 odbcGetInfo(channel)
 
-# 
-
-# season-specific fixed inputs --------------------------------------------
-
-# # you need to UPDATE this section each year with the current cruise and vessels
-current_year <- year(today())
+# Season-specific fixed inputs --------------------------------------------
+# UPDATE this section each year with the current cruise and vessels
+current_year <- year(Sys.Date())
 # current_year <- 2023  # choose a different year when debugging
 prev_year <- current_year - 1
 cruise <- paste0(current_year, "01", ",", current_year, "02")
@@ -122,18 +112,17 @@ cruise_info <- sqlQuery(channel, query_command) %>%
 
 cruise_id_nums <- cruise_info %>% dplyr::filter(vessel_id %in% vessel_nums) 
 
-# cruise_id <- paste0(cruise_id_nums$cruise_id[1], "," , cruise_id_nums$cruise_id[2], 
-#                     "," , cruise_id_nums$cruise_id[3], "," , cruise_id_nums$cruise_id[4])
+cruise_id <- paste0(cruise_id_nums$cruise_id[1], "," , cruise_id_nums$cruise_id[2],
+                    "," , cruise_id_nums$cruise_id[3], "," , cruise_id_nums$cruise_id[4])
 
-cruise_id <- paste0(cruise_id_nums$cruise_id[1], "," , cruise_id_nums$cruise_id[2])
+# cruise_id <- paste0(cruise_id_nums$cruise_id[1], "," , cruise_id_nums$cruise_id[2])
 
 # NBS subarea stratum-- this shouldn't change too much, but is a fixed input
-NBS_subarea <- c(81, 70, 71, 99) #NBS stratum numbers; added 99 to indicate 2018 NBS emergency survey; diff survey methods
+NBS_subarea <- c(81, 70, 71, 99) # NBS stratum numbers; added 99 to indicate 2018 NBS emergency survey; diff survey methods
 
 # data --------------------------------------------------------------------
 
-# * fixed selections ------------------------------------------------------
-
+# fixed selections ------------------------------------------------------
 # do you want model-based or design-based data?
 data_type <- (readline(prompt = "Do you want model-based or design-based data (Enter: MB or DB): "))
 mb
@@ -159,7 +148,7 @@ y
 dir_thisyr <- paste0(current_year,"_", data_type, "_data_", strat_meta_year, "_strata")
 
 #Only run when starting from scratch
-dir.create(here::here("output",dir_thisyr))
+dir.create(here("output",dir_thisyr))
 
 # * pollock data ----------------------------------------------------------
 # * don't include slope survey for VAST -------------------------------------
@@ -174,7 +163,7 @@ slope_survey <- slope_survey_d()
 ##   but you only have to run it once after the survey data are finalized (but it doesn't hurt anything if you run it again)
 ## you can run that code by un-commenting and running the following line:
 
-RODBC::sqlQuery(channel, "BEGIN safe.UPDATE_SURVEY; END;")
+# RODBC::sqlQuery(channel, "BEGIN safe.UPDATE_SURVEY; END;")
 
 ## now you can get the haul data:
 ## you pull different hauls depending on whether you are running for model-based or design-based indices/comps
@@ -244,7 +233,7 @@ if(data_type == 'db')
   pollock_length_nbs <- length_data_d(hauljoins = valid_hauljoins_nbs)
   pollock_raw_length_nbs <- pollock_length_nbs$pollock_raw_length
   pollock_raw_length_ebs <- left_join(pollock_raw_length, hauls_survey) %>% 
-    dplyr::filter(!stratum %in% NBS_subarea)
+    filter(!stratum %in% NBS_subarea)
 }
 
 # * metadata aka update cruise --------------------------------------------------------------
@@ -365,9 +354,9 @@ check_ddc <- ddc_table %>%
 # now you re-run the table functions using the ddc cpue from "new3"
 
 ddc_cpue <- ddc_table %>%
-  dplyr::select(-cpue_num_ha, -cpue_kg_ha) %>% 
-  dplyr::rename(cpue_num_ha = ddc_cpue_num_ha,
-                cpue_kg_ha = ddc_cpue_kg_ha) %>% 
+  select(-cpue_num_ha, -cpue_kg_ha) %>% 
+  rename(cpue_num_ha = ddc_cpue_num_ha,
+         cpue_kg_ha = ddc_cpue_kg_ha) %>% 
   ungroup() %>% 
   group_by(year, stratum) %>% 
   summarize(number_hauls_no = length(cpue_num_ha[!is.na(cpue_num_ha)]), 
