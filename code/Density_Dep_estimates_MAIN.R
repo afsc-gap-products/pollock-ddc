@@ -99,7 +99,6 @@ odbcGetInfo(channel)
 # UPDATE this section each year with the current cruise and vessels
 current_year <- year(Sys.Date())
 # current_year <- 2023  # choose a different year when debugging
-prev_year <- current_year - 1
 cruise <- paste0(current_year, "01", ",", current_year, "02")
 vessel_code <- paste0(162, "," , 134) #list each vessel, separated by commas
 vessel_nums <- c(162, 134)
@@ -118,44 +117,40 @@ cruise_id <- paste0(cruise_id_nums$cruise_id[1], "," , cruise_id_nums$cruise_id[
 # NBS subarea stratum-- this shouldn't change too much, but is a fixed input
 NBS_subarea <- c(81, 70, 71, 99) # NBS stratum numbers; added 99 to indicate 2018 NBS emergency survey; diff survey methods
 
-# Model- or design-based data (mb or db) 
-data_type <- mb
-
 # Strata metadata year; 2022 is the latest update (use for current assessments)
 strat_meta_year <- 2022
 
-# Save a copy of the raw data? (y for YES, n for NO)
-stable_data_save <- y
+data_type <- "mb"
 
 # Set up folder 
 dir_thisyr <- paste0(current_year,"_", data_type, "_data_", strat_meta_year, "_strata")
 dir.create(here("output",dir_thisyr))
 
+
 # data --------------------------------------------------------------------
-# Don't include slope survey for VAST 
-slope_survey <- slope_survey_d()
+process_data <- function(first_run = TRUE, estimate_ages = FALSE, save_data = TRUE) {
+  # Don't include slope survey for VAST
+  slope_survey <- slope_survey_d()
+  
+  #' Once per year, when the new survey data is in, you need to update the 
+  #' "valid hauls". Jason Conner put code in the Oracle safe folder to do this. 
+  #' If you do not run this, you will not get the most current year of survey 
+  #' data, but you only have to run it once after the survey data are finalized 
+  #' (but it doesn't hurt anything if you run it again).
+  if(first_run == TRUE) {
+    RODBC::sqlQuery(channel, "BEGIN safe.UPDATE_SURVEY; END;")
+  }
+  
+  ## Haul data ----------------------------------------------------------------
+  #' Get the haul data. You pull different hauls depending on whether you're 
+  #' running the model-based or design-based indices/comps. Design-based indices
+  #' do not include the NBS prior to 2010 and do not include the non-standard
+  #' 2018 NBS survey; model-based indices include all valid NBS sations 
+  #' throughout the time series, including 2018.
+  get_hauls <- haul_data_d(data_selection = data_type, 
+                           nbs_subarea = NBS_subarea, 
+                           slope_info = slope_survey)
 
-#' Once per year, when the new survey data is in, you need to update the "valid 
-#' hauls". Jason Conner put code in the Oracle safe folder to do this. If you 
-#' do not run this, you will not get the most current year of survey data, but 
-#' you only have to run it once after the survey data are finalized (but it 
-#' doesn't hurt anything if you run it again). You can run that code by un-
-#' commenting and running the following line:
-
-# RODBC::sqlQuery(channel, "BEGIN safe.UPDATE_SURVEY; END;")
-
-## haul data -----------------------------------------------------------
-
-#' Now you can get the haul data. You pull different hauls depending on whether 
-#' you are running for model-based or design-based indices/comps. Design-based 
-#' indices do not include the NBS prior to 2010, and do not include the non-
-#' standard 2018 NBS survey; model-based indices include all valid NBS stations 
-#' throughout the time series, including 2018 NBS survey.
-
-get_hauls <- haul_data_d(data_selection = data_type, nbs_subarea = NBS_subarea, slope_info = slope_survey)
-
-if(data_type == "db")
-{
   hauls_survey_ebs <- get_hauls$good_hauls_DB_EBS
   hauls_survey_nbs <- get_hauls$good_hauls_DB_NBS
   hauls_survey_bad_ebs <- get_hauls$bad_hauls_DB_ebs
@@ -165,175 +160,157 @@ if(data_type == "db")
   valid_hauljoins_nbs <- hauls_survey_nbs$hauljoin
   hauls_survey <- hauls_survey_ebs %>% bind_rows(hauls_survey_nbs)
   hauls_survey_bad <- hauls_survey_bad_ebs %>% bind_rows(hauls_survey_bad_nbs)
-}else if(data_type == "mb")
-{
-  hauls_survey <- get_hauls$good_hauls_MB
-  hauls_survey_bad <- get_hauls$bad_hauls
-  all_hauljoins <- c(hauls_survey$hauljoin, hauls_survey_bad$hauljoin)
-}
-
-valid_hauljoins <- hauls_survey$hauljoin
-
-# * * specimen data -----------------------------------------------
-
-pollock_specimen <- specimen_data_d(hauls_survey_dat = hauls_survey)
-
-# some bad hauls have useful age and length info that we use in the age-length-key, but not the age comps
-pollock_specimen_bad <- specimen_data_d(hauls_survey_dat = hauls_survey_bad)
-
-pollock_specimen_all <- pollock_specimen %>% 
-  bind_rows(pollock_specimen_bad) %>%  
-  dplyr::filter(!is.na(age))  # SNW: comment out this line to create estimated ALK for current year
-
-## separate ebs and nbs specimen data for design-based age comps
-if(data_type == 'db')
-{
-  pollock_specimen_nbs <- specimen_data_d(hauls_survey_dat = hauls_survey_nbs)
-  pollock_specimen_bad_nbs <- specimen_data_d(hauls_survey_dat = hauls_survey_bad_nbs)
-  pollock_specimen_all_nbs <- pollock_specimen_nbs %>%
-    bind_rows(pollock_specimen_bad_nbs) %>%
-    dplyr::filter(!is.na(age))
   
-  pollock_specimen_ebs <- pollock_specimen %>% dplyr::filter(!stratum %in% NBS_subarea)
-}
-
-# * * catch data ----------------------------------------------------------
-
-pollock_catch <- catch_data_d(hauljoins = valid_hauljoins)
-
-# * * length data ---------------------------------------------------------
-pollock_length_info <- length_data_d(valid_hauljoins)
-
-pollock_length <- pollock_length_info$pollock_length
-
-pollock_raw_length <- pollock_length_info$pollock_raw_length
-
-## separate ebs and nbs length data for design-based age comps
-
-if(data_type == 'db')
-{
-  pollock_length_nbs <- length_data_d(hauljoins = valid_hauljoins_nbs)
-  pollock_raw_length_nbs <- pollock_length_nbs$pollock_raw_length
-  pollock_raw_length_ebs <- left_join(pollock_raw_length, hauls_survey) %>% 
-    filter(!stratum %in% NBS_subarea)
-}
-
-# * metadata aka update cruise --------------------------------------------------------------
-
-strata_metadata <- metadata_d(cruise_id = cruise, vessel_code_id = vessel_code, 
-           pollock_specimen_data = pollock_specimen, 
-           meta_select = strat_meta_year)
-
-# save raw data -----------------------------------------------------------
-
-# you should always use the most current data.
-# if you wish to save a stable copy of your current data, use the following function:
-if(stable_data_save == "y") { raw_data_save <- save_raw_data(hauls_survey = hauls_survey, 
-                                                             pollock_specimen = pollock_specimen, 
-                                                             pollock_catch = pollock_catch,
-                                                             pollock_length = pollock_length,
-                                                             # ebs_shelf_cruise = ebs_shelf_cruise, 
-                                                             metadata = strata_metadata) #, 
-                                                             # strata_metadata_raw = strata_metadata_raw)
-} else if(stable_data_save == "n") {print("moving on...")
-} else(print("Invalid selection: please enter lowercase y for YES or n for NO for stable data save"))
-
-# data processing functions --------------------------------------------------------
-
-# calculate cpue
-cpue_info <- get_cpue(hauls = hauls_survey, catch = pollock_catch, strata_filter = strata_metadata)
-
-# population: convert cpue into population numbers and biomass using stratum areas
-all_strata <- get_stratum_proportions(ebs_strata = strata_metadata)
-pop_info <- population(ebs_strata = all_strata, avg_cpue = cpue_info$avg_cpue_yr_strat)
-
-# sizecomp: generate the length comps
-length_comps <- length_comp_f(length = pollock_length, hauls = hauls_survey, catch = pollock_catch, 
-                              stratum = pop_info$ebs_strata, 
-                              biomass_kg = pop_info$pollock_biomass_kg_ha, 
-                              biomass_mt = pop_info$pollock_biomass_MT_ha)
-
-# put the length comps together in a table 
-#  (to match stan's methods: ebs_pollock_cpue_length table (from bottom of agecomp_with_global_key_no_loop.SQL))
-cpue_length_table <- full_join(length_comps$sizecomp_cpue_stn, hauls_survey) %>%  #, by = c("vessel", "year", "haul"))
-  select(cruisejoin, vessel, year, haul, start_latitude, start_longitude, stratum, stationid, sex, length, cpue_length_num_ha)
-
-# note that the age length key and age comp names were reversed in stan's code, which is reflected in the function names here
-
-# generate the age-length key
-# stan called this: agecomp_11
-age_comps <- get_agecomps(specimen = pollock_specimen_all, pop_lengths = length_comps$pollock_length_comp)
-# age_comps_bad <- get_agecomps(specimen = pollock_specimen_bad, pop_lengths = length_comps$pollock_length_comp)
-
-# extract the full key for use:
-age_comp_full_key <- bind_rows(age_comps$aal_filled_key) 
-
-# agecomp2key; the non-DDC key is not used anywhere, FYI
-# CIA: pollock_specimen vs pollock_specimen_all  here?? (think about whether bad hauls should be included)
-al_key <- get_al_key(pollock_specimen_all, length_comps$pollock_length_comp)
-# CIA: NOTE- consider updating alk methods for 2022
-
-# convert new 1 -----------------------------------------------------------
-# this is the conversion of stan's "new1.R' which starts the density-dependent conversion process
-# requres: pollock_cpue_length = cpue_length_table
-         # pollock_cpue = cpue_info$avg_cpue_yr_strat
-
-# z csxzaazaserraqwdfdhghggf tteszzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz <- ELI IS HELPING
-
-equiv_bs_length <- backscatter_est(cpue_length_table)
-
-# convert new 2 -----------------------------------------------------------
-# this is the conversion of stan's "new2.R' which continues the DDC process by getting the backscatter correction for cpue
-# read in abc_exp.csv table
-param_ests <-  read_csv(here("from_stan","abc_exp.csv"))
+  if(data_type == "mb") {
+    hauls_survey <- get_hauls$good_hauls_MB
+    hauls_survey_bad <- get_hauls$bad_hauls
+    all_hauljoins <- c(hauls_survey$hauljoin, hauls_survey_bad$hauljoin)
+  } 
+  
+  valid_hauljoins <- hauls_survey$hauljoin
+  
+  ## Specimen data ------------------------------------------------------------
+  pollock_specimen <- specimen_data_d(hauls_survey_dat = hauls_survey)
+  
+  # some bad hauls have useful age and length info that we use in the ALK, but not the age comps
+  pollock_specimen_bad <- specimen_data_d(hauls_survey_dat = hauls_survey_bad)
+  
+  pollock_specimen_all <- pollock_specimen %>% 
+    bind_rows(pollock_specimen_bad) 
+  
+  #' Remove NAs if not estimating ages for the current year, using the ALK. 
+  #' Because we usually have pollock ages for the current year by the time we 
+  #' run the comp code, we don't need to estimate ages, so this is the default.
+  if(estimate_ages == FALSE) {
+    pollock_specimen_all <- pollock_specimen_all %>% dplyr::filter(!is.na(age))
+  }
+  
+  # Separate EBS and NBS specimen data for design-based age comps
+  if(data_type == "db")
+  {
+    pollock_specimen_nbs <- specimen_data_d(hauls_survey_dat = hauls_survey_nbs)
+    pollock_specimen_bad_nbs <- specimen_data_d(hauls_survey_dat = hauls_survey_bad_nbs)
+    pollock_specimen_all_nbs <- pollock_specimen_nbs %>%
+      bind_rows(pollock_specimen_bad_nbs) %>%
+      filter(!is.na(age))
+    
+    pollock_specimen_ebs <- pollock_specimen %>% filter(!stratum %in% NBS_subarea)
+  }
+  
+  ## Catch data ---------------------------------------------------------------
+  pollock_catch <- catch_data_d(hauljoins = valid_hauljoins)
+  
+  ## Length data --------------------------------------------------------------
+  pollock_length_info <- length_data_d(valid_hauljoins)
+  
+  pollock_length <- pollock_length_info$pollock_length
+  pollock_raw_length <- pollock_length_info$pollock_raw_length
+  
+  # Separate EBS and NBS length data for design-based age comps
+  if(data_type == "db") {
+    pollock_length_nbs <- length_data_d(hauljoins = valid_hauljoins_nbs)
+    pollock_raw_length_nbs <- pollock_length_nbs$pollock_raw_length
+    pollock_raw_length_ebs <- left_join(pollock_raw_length, hauls_survey) %>% 
+      filter(!stratum %in% NBS_subarea)
+  }
+  
+  ## Metadata (aka update cruise) ---------------------------------------------
+  strata_metadata <- metadata_d(cruise_id = cruise, 
+                                vessel_code_id = vessel_code, 
+                                pollock_specimen_data = pollock_specimen, 
+                                meta_select = strat_meta_year)
+  
+  # Save raw data -------------------------------------------------------------
+  if(save_data == TRUE) {
+    raw_data_save <- save_raw_data(hauls_survey = hauls_survey, 
+                                   pollock_specimen = pollock_specimen, 
+                                   pollock_catch = pollock_catch,
+                                   pollock_length = pollock_length,
+                                   # ebs_shelf_cruise = ebs_shelf_cruise, 
+                                   metadata = strata_metadata) #, 
+                                   # strata_metadata_raw = strata_metadata_raw)
+  }
+  
+  ## Data Processing ----------------------------------------------------------
+  # Calculate CPUE 
+  cpue_info <- get_cpue(hauls = hauls_survey, 
+                        catch = pollock_catch, 
+                        strata_filter = strata_metadata)
+  
+  # Convert CPUE to population (numbers) and biomass using stratum areas
+  all_strata <- get_stratum_proportions(ebs_strata = strata_metadata)
+  pop_info <- population(ebs_strata = all_strata, 
+                         avg_cpue = cpue_info$avg_cpue_yr_strat)
+  
+  # Generate length comps
+  length_comps <- length_comp_f(length = pollock_length, 
+                                hauls = hauls_survey, 
+                                catch = pollock_catch, 
+                                stratum = pop_info$ebs_strata, 
+                                biomass_kg = pop_info$pollock_biomass_kg_ha, 
+                                biomass_mt = pop_info$pollock_biomass_MT_ha)
+  
+  # Put length comps into a table
+  cpue_length_table <- full_join(length_comps$sizecomp_cpue_stn, hauls_survey) %>%  #, by = c("vessel", "year", "haul"))
+    select(cruisejoin, vessel, year, haul, start_latitude, start_longitude, 
+           stratum, stationid, sex, length, cpue_length_num_ha)
+  
+  #' NB: the age length key and age comp names were reversed in Stan's code, 
+  #' which is reflected in the function names here.
+  age_comps <- get_agecomps(specimen = pollock_specimen_all, 
+                            pop_lengths = length_comps$pollock_length_comp)
+  
+  # Extract the full key for use
+  age_comp_full_key <- bind_rows(age_comps$aal_filled_key) 
+  
+  # CIA: pollock_specimen vs pollock_specimen_all here?? (think about whether bad hauls should be included)
+  al_key <- get_al_key(pollock_specimen_all, length_comps$pollock_length_comp)
+  # CIA: NOTE- consider updating alk methods for 2022
+  
+  ### Convert new 1 -----------------------------------------------------------
+  # this is the conversion of stan's "new1.R' which starts the density-dependent conversion process
+  # requres: pollock_cpue_length = cpue_length_table
+  # pollock_cpue = cpue_info$avg_cpue_yr_strat
+  # z csxzaazaserraqwdfdhghggf tteszzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz <- ELI IS HELPING
+  equiv_bs_length <- backscatter_est(cpue_length_table)
+  
+  ### Convert new 2 -----------------------------------------------------------
+  #' this is the conversion of Stan's "new2.R' which continues the DDC process by getting the backscatter correction for CPUE
+  # read in abc_exp.csv table
+  param_ests <-  read_csv(here("from_stan", "abc_exp.csv"))
   # asp, slope, and intercept = 3 parameters of the correction fxn; generated in other code; 
-    # saved as is until new data (future)
+  # saved as is until new data (future)
+  backscatter_cpue_corr <- ddc_cpue_bs(equiv_bs_length, param_ests)
+  
+  ### Convert new 3 -----------------------------------------------------------
+  # this is the conversion of Stan's 'new3.R' which applies the correction and builds the ddc cpue table
+  ddc_table <- ddc_fxn(backscatter_cpue_corr, cpue_info$p_cpue)
+  
+  check_ddc <- ddc_table %>% 
+    select(vessel, year, haul, cruise, stratum, start_latitude, start_longitude, 
+           species_code, ddc_cpue_kg_ha, ddc_cpue_num_ha, area_fished_ha) %>% 
+    rename(latitude = start_latitude, longitude = start_longitude) %>% 
+    select(- latitude, -longitude, -species_code)
+  
+  ## Return tables for next step ----------------------------------------------
+  return(list(hauls_survey = hauls_survey, 
+              pollock_specimen = pollock_specimen,
+              pollock_catch = pollock_catch,
+              pollock_length = pollock_length,
+              all_strata = all_strata,
+              ddc_table = ddc_table))
+}
 
-backscatter_cpue_corr <- ddc_cpue_bs(equiv_bs_length, param_ests)
+tables <- process_data()
 
-# convert new 3 -----------------------------------------------------------
-# this is the conversion of stan's 'new3.R' which applies the correction and builds the ddc cpue table
 
-ddc_table <- ddc_fxn(backscatter_cpue_corr, cpue_info$p_cpue)
 
-# check
-# stan_check <- read_csv(here("from_stan", "pollock_cpue_new.csv")) %>% 
-#   clean_names() %>% 
-#   rename(stratum = substrata, 
-#          ddc_cpue_kg_ha = cpue_kgha, 
-#          ddc_cpue_num_ha = cpue_noha,
-#          area_fished_ha = area_fished)
 
-check_ddc <- ddc_table %>% 
-  select(vessel, year, haul, cruise, stratum, start_latitude, start_longitude, 
-         species_code, ddc_cpue_kg_ha, ddc_cpue_num_ha, area_fished_ha) %>% 
-  rename(latitude = start_latitude, longitude = start_longitude) %>% 
-  select(- latitude, -longitude, -species_code)
 
-# Check code:
-
-# check_table <- stan_check %>% 
-#   select(- latitude, -longitude, -species_code) %>% 
-#   full_join(check_ddc, by = c("vessel", "year", "haul", "cruise", "stratum"),
-#             suffix = c("_sk", "_cia")) %>% 
-#   arrange(year, vessel, haul) %>% 
-#   mutate(check_kg_ha = abs(ddc_cpue_kg_ha_sk - ddc_cpue_kg_ha_cia),
-#          check_num_ha = abs(ddc_cpue_num_ha_sk - ddc_cpue_num_ha_cia),
-#          check_area = abs(area_fished_ha_sk - area_fished_ha_cia))
-# View(check_table)
-# check_table %>% dplyr::filter(check_kg_ha > 0.1)
-# check_table %>% dplyr::filter(check_num_ha > 0.1) %>% dplyr::select(vessel, year, haul, cruise, stratum, ddc_cpue_num_ha_sk, ddc_cpue_num_ha_cia, check_num_ha)
-# check_table %>% dplyr::filter(check_area > 0.1)
-# 
-# write_csv(check_table, here("output", "CHECK_ddc_index_compare_2022.csv"))
-
-# 2021/08/20: all values are the same- hooray!
-# 2022/04/29: same again
-#   difference: cia table includes NBS and EBS, sk table includes EBS only
 
 # ddc-converted tables ----------------------------------------------------
 
-# now you re-run the table functions using the ddc cpue from "new3"
+
 
 ddc_cpue <- ddc_table %>%
   select(-cpue_num_ha, -cpue_kg_ha) %>% 
