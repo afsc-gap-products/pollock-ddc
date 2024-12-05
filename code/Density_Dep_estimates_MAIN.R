@@ -115,60 +115,42 @@ cruise_id_nums <- cruise_info %>% dplyr::filter(vessel_id %in% vessel_nums)
 cruise_id <- paste0(cruise_id_nums$cruise_id[1], "," , cruise_id_nums$cruise_id[2],
                     "," , cruise_id_nums$cruise_id[3], "," , cruise_id_nums$cruise_id[4])
 
-# cruise_id <- paste0(cruise_id_nums$cruise_id[1], "," , cruise_id_nums$cruise_id[2])
-
 # NBS subarea stratum-- this shouldn't change too much, but is a fixed input
 NBS_subarea <- c(81, 70, 71, 99) # NBS stratum numbers; added 99 to indicate 2018 NBS emergency survey; diff survey methods
 
-# data --------------------------------------------------------------------
+# Model- or design-based data (mb or db) 
+data_type <- mb
 
-# fixed selections ------------------------------------------------------
-# do you want model-based or design-based data?
-data_type <- (readline(prompt = "Do you want model-based or design-based data (Enter: MB or DB): "))
-mb
-if(data_type == "MB"){data_type <- "mb"}
-if(data_type == "DB"){data_type <-  "db"}
+# Strata metadata year; 2022 is the latest update (use for current assessments)
+strat_meta_year <- 2022
 
-# which strata_metadata do you want to use?
-strat_meta_year <- as.numeric(readline(prompt = "Which statum year do you want to use (Enter: 2010, 2019, or 2022): "))
-2022
-## 2010: for testing to match Stan's code
-## 2019: recent update of strata- used for 2021 assessment
-## 2022: DEFAULT: latest update and strata to use for current assessments
+# Save a copy of the raw data? (y for YES, n for NO)
+stable_data_save <- y
 
-
-# you should always use the most current data.
-# if you wish to save a stable copy of your current data, use the following function:
-
-stable_data_save <- readline(prompt = "Do you want to save a copy of your raw data (Enter: y for YES or n for NO): ")
-y
-# this is the default option, to skip data save, enter "n"
-
-# folders -----------------------------------------------------------------
+# Set up folder 
 dir_thisyr <- paste0(current_year,"_", data_type, "_data_", strat_meta_year, "_strata")
-
-#Only run when starting from scratch
 dir.create(here("output",dir_thisyr))
 
-# * pollock data ----------------------------------------------------------
-# * don't include slope survey for VAST -------------------------------------
-
+# data --------------------------------------------------------------------
+# Don't include slope survey for VAST 
 slope_survey <- slope_survey_d()
 
-# * * haul data -----------------------------------------------------------
-
-## Once per year, when the new survey data is in, you need to update the "valid hauls"
-## Jason Conner put code in the Oracle safe folder to do this.
-## If you do not run this, you will not get the most current year of survey data, 
-##   but you only have to run it once after the survey data are finalized (but it doesn't hurt anything if you run it again)
-## you can run that code by un-commenting and running the following line:
+#' Once per year, when the new survey data is in, you need to update the "valid 
+#' hauls". Jason Conner put code in the Oracle safe folder to do this. If you 
+#' do not run this, you will not get the most current year of survey data, but 
+#' you only have to run it once after the survey data are finalized (but it 
+#' doesn't hurt anything if you run it again). You can run that code by un-
+#' commenting and running the following line:
 
 # RODBC::sqlQuery(channel, "BEGIN safe.UPDATE_SURVEY; END;")
 
-## now you can get the haul data:
-## you pull different hauls depending on whether you are running for model-based or design-based indices/comps
-## design-based indices do not include the NBS prior to 2010, and do not include the non-standard 2018 NBS survey
-## model-based indices include all valid NBS stations throughout the time series, including 2018 NBS survey
+## haul data -----------------------------------------------------------
+
+#' Now you can get the haul data. You pull different hauls depending on whether 
+#' you are running for model-based or design-based indices/comps. Design-based 
+#' indices do not include the NBS prior to 2010, and do not include the non-
+#' standard 2018 NBS survey; model-based indices include all valid NBS stations 
+#' throughout the time series, including 2018 NBS survey.
 
 get_hauls <- haul_data_d(data_selection = data_type, nbs_subarea = NBS_subarea, slope_info = slope_survey)
 
