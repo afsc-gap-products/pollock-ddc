@@ -180,7 +180,7 @@ bootstrap_stan <- function() {
       ncpue.y.s <- ncpue.y[ncpue.y$SUBSTRATA == jj, ]  # select specific year and strata
       nn <- length(ncpue.y.s[, 1])  # number samples wanted
       samp <- sample.int(nn, size = nn, replace = T)  # randomly pick order, possibly with duplicates
-      ncpue.y.s.n=ncpue.y.s[samp,]  # arrange in random order
+      ncpue.y.s.n <- ncpue.y.s[samp,]  # arrange in random order
       for(jj in subs[-1]) {
         ncpue.y.s <- ncpue.y[ncpue.y$SUBSTRATA == jj, ] 
         nn <- length(ncpue.y.s[, 1])
