@@ -299,69 +299,74 @@ process_data <- function(first_run = TRUE, estimate_ages = FALSE, save_data = TR
               pollock_catch = pollock_catch,
               pollock_length = pollock_length,
               all_strata = all_strata,
+              cpue_length_table = cpue_length_table,
+              age_comp_full_key = age_comp_full_key,
               ddc_table = ddc_table))
 }
 
 tables <- process_data()
 
-
-
-
-
+# Define inputs for next function - save to environment variables explicitly
+hauls_survey <- tables$hauls_survey
+pollock_specimen <- tables$pollock_specimen
+pollock_catch <- tables$pollock_catch
+pollock_length <- tables$pollock_length
+all_strata <- tables$all_strata
+ddc_table <- tables$ddc_table
 
 # ddc-converted tables ----------------------------------------------------
 
+# Density-dependent correction ------------------------------------------------
+ddc_conversion <- function() {
+  # CPUE
+  ddc_cpue <- ddc_table %>%
+    select(-cpue_num_ha, -cpue_kg_ha) %>% 
+    rename(cpue_num_ha = ddc_cpue_num_ha,
+           cpue_kg_ha = ddc_cpue_kg_ha) %>% 
+    ungroup() %>% 
+    group_by(year, stratum) %>% 
+    summarize(number_hauls_no = length(cpue_num_ha[!is.na(cpue_num_ha)]), 
+              number_hauls_kg = length(cpue_kg_ha[!is.na(cpue_kg_ha )]),
+              avg_cpue_no_ha = mean(cpue_num_ha, na.rm = TRUE), 
+              var_cpue_no_ha = var(cpue_num_ha,  na.rm = TRUE), 
+              avg_cpue_kg_ha = mean(cpue_kg_ha,  na.rm = TRUE), 
+              var_cpue_kg_ha = var(cpue_kg_ha,   na.rm = TRUE), 
+              number_hauls = length(haul),
+              tot_area_fished = sum(area_fished_ha, na.rm = TRUE))
+  
+  # Population
+  ddc_pop_ests <- population(ebs_strata = all_strata, avg_cpue = ddc_cpue)
+  ddc_pop_ests_EBS <- ddc_pop_ests$pollock_biomass_MT_ha %>% dplyr::filter(subarea != 0)
+  ddc_pop_ests_NBS <- ddc_pop_ests$pollock_biomass_MT_ha %>% dplyr::filter(subarea == 0)
+  
+  # Length comps
+  ddc_length_comps <- length_comp_f(pollock_length, hauls_survey, pollock_catch, 
+                                    ddc_pop_ests$ebs_strata, 
+                                    ddc_pop_ests$pollock_biomass_kg_ha, 
+                                    ddc_pop_ests$pollock_biomass_MT_ha)
+  ddc_cpue_length_table <- full_join(ddc_length_comps$sizecomp_cpue_stn, hauls_survey) %>%  #, by = c("vessel", "year", "haul"))
+    select(cruisejoin, vessel, year, haul, start_latitude, start_longitude, stratum, stationid, sex, length, cpue_length_num_ha)
+  
+  # Age-length key - function name is switched!
+  ddc_age_comps <- get_agecomps(pollock_specimen, ddc_length_comps$pollock_length_comp)
+  
+  # Age comps - function name is switched!
+  ddc_al_key <- get_al_key(pollock_specimen, ddc_length_comps$pollock_length_comp)
+  
+  # DDC numbers-at-age by year and station ------------------------------------
+  # This step takes a long time!
+  ddc_alk_all <- ddc_age_comps_f(ddc_table,
+                                 tables$age_comp_full_key,  # CIA: Stan uses UNCORRECTED AAL key
+                                 tables$cpue_length_table)  # CIA: Stan uses UNCORRECTED CPUE number at length
+  
+  ddc_alk <- ddc_alk_all$ddc_age
+  
+  return(ddc_alk)
+}
+
+ddc_alk <- ddc_conversion()
 
 
-ddc_cpue <- ddc_table %>%
-  select(-cpue_num_ha, -cpue_kg_ha) %>% 
-  rename(cpue_num_ha = ddc_cpue_num_ha,
-         cpue_kg_ha = ddc_cpue_kg_ha) %>% 
-  ungroup() %>% 
-  group_by(year, stratum) %>% 
-  summarize(number_hauls_no = length(cpue_num_ha[!is.na(cpue_num_ha)]), 
-            number_hauls_kg = length(cpue_kg_ha[!is.na(cpue_kg_ha )]),
-            avg_cpue_no_ha = mean(cpue_num_ha, na.rm = TRUE), 
-            var_cpue_no_ha = var(cpue_num_ha,  na.rm = TRUE), 
-            avg_cpue_kg_ha = mean(cpue_kg_ha,  na.rm = TRUE), 
-            var_cpue_kg_ha = var(cpue_kg_ha,   na.rm = TRUE), 
-            number_hauls = length(haul),
-            tot_area_fished = sum(area_fished_ha, na.rm = TRUE))
-
-
-# population:
-ddc_pop_ests <- population(ebs_strata = all_strata, avg_cpue = ddc_cpue)
-ddc_pop_ests_EBS <- ddc_pop_ests$pollock_biomass_MT_ha %>% dplyr::filter(subarea != 0)
-ddc_pop_ests_NBS <- ddc_pop_ests$pollock_biomass_MT_ha %>% dplyr::filter(subarea == 0)
-
-# length comps:
-ddc_length_comps <- length_comp_f(pollock_length, hauls_survey, pollock_catch, 
-              ddc_pop_ests$ebs_strata, 
-              ddc_pop_ests$pollock_biomass_kg_ha, 
-              ddc_pop_ests$pollock_biomass_MT_ha)
-
-ddc_cpue_length_table <- full_join(ddc_length_comps$sizecomp_cpue_stn, hauls_survey) %>%  #, by = c("vessel", "year", "haul"))
-  select(cruisejoin, vessel, year, haul, start_latitude, start_longitude, stratum, stationid, sex, length, cpue_length_num_ha)
-
-# age-length key:
-ddc_age_comps <- get_agecomps(pollock_specimen, ddc_length_comps$pollock_length_comp)
-
-# age comps:
-ddc_al_key <- get_al_key(pollock_specimen, ddc_length_comps$pollock_length_comp)
-
-
-# ddc numbers at age by year and station ----------------------------------
-# SNW: this is where it starts taking a while
-
-ddc_alk_all <- ddc_age_comps_f(ddc_table,
-                              age_comp_full_key,  #CIA: Stan uses UNCORRECTED aal key
-                              cpue_length_table) # CIA: Stan uses UNCORRECTED cpue number at length
-
-ddc_alk <- ddc_alk_all$ddc_age
-
-# convert new 4 -----------------------------------------------------------
-# this is the conversion of stan's 'new4.R' which sets up the bootstrapping procedure to generate a v-cov matrix later
-# CORRECTION: Caitlin's method did not produce the same amount of variance in the v-cov matrix, 
 #   so that code is commented out and stan's code is implemented directly
 
 ##### caitlin's section ####
