@@ -299,9 +299,12 @@ process_data <- function(first_run = TRUE, estimate_ages = FALSE, save_data = TR
               pollock_catch = pollock_catch,
               pollock_length = pollock_length,
               all_strata = all_strata,
+              pop_info = pop_info,
+              strata_metadata = strata_metadata,
               cpue_length_table = cpue_length_table,
               age_comp_full_key = age_comp_full_key,
-              ddc_table = ddc_table))
+              ddc_table = ddc_table, 
+              cpue_info = cpue_info))
 }
 
 tables <- process_data()
@@ -312,9 +315,9 @@ pollock_specimen <- tables$pollock_specimen
 pollock_catch <- tables$pollock_catch
 pollock_length <- tables$pollock_length
 all_strata <- tables$all_strata
+strata_metadata <- strata_metadata
 ddc_table <- tables$ddc_table
 
-# ddc-converted tables ----------------------------------------------------
 
 # Density-dependent correction ------------------------------------------------
 ddc_conversion <- function() {
@@ -361,325 +364,100 @@ ddc_conversion <- function() {
   
   ddc_alk <- ddc_alk_all$ddc_age
   
-  return(ddc_alk)
+  return(list(ddc_cpue = ddc_cpue, 
+              ddc_pop_ests = ddc_pop_ests,
+              ddc_pop_ests_EBS = ddc_pop_ests_EBS,
+              ddc_pop_ests_NBS = ddc_pop_ests_NBS,
+              ddc_cpue_length_table = ddc_cpue_length_table,
+              ddc_al_key = ddc_al_key,
+              ddc_alk = ddc_alk))
 }
 
-ddc_alk <- ddc_conversion()
+ddc <- ddc_conversion()
+ddc_alk <- ddc$ddc_alk
 
 
-#   so that code is commented out and stan's code is implemented directly
+# Apply Stan's bootstrapping method, if using design-based method -------------
+bootstrapping <- function() {
+  if(data_type == "mb") {
+    print("Moving on! This function is only for the design-based data.")
+  }
+  
+  if(data_type == "db") {
+    bootstrap_stan()
+  }
+}
 
-##### caitlin's section ####
+db_bootstrap <- bootstrapping()
 
-# # resample the data for each year and strata
-# resample <- resamp_data(corr_cpue = ddc_table)
-# 
-# # check:
-# # mean(resample$ddc_cpue_kg_ha)
-# # mean(ddc_table$ddc_cpue_kg_ha)
-# # mean(resample$ddc_cpue_num_ha, na.rm = T)
-# # mean(ddc_table$ddc_cpue_num_ha, na.rm = T)
-# 
-# # cpue per station for one resample
-# resample_pop <- resamp_pop(resamp = resample, strata = strata_metadata) %>% 
-#   dplyr::filter(!is.na(year))
-# 
-# # CIA: YOU ARE HERE (last part of new4.R)
-# param_sample <- sample(1000,1000,replace=T)
-# 
-# biomass <- matrix(nrow = length(param_sample), ncol = dim(resample_pop)[1])
-# population <- matrix(nrow = length(param_sample), ncol = dim(resample_pop)[1])
-# 
-# 
-# v_cov_units <- readline(prompt = "Which units do you want to use in the v-cov matrix (Enter: k for kg or t for th t): ")
-# 
-# k 
-# 
-# if(v_cov_units == 'k') 
-# {
-#   biomass <- foreach(i = 1:1000, .combine=rbind) %dopar% {
-#     library(magrittr)
-#     library(tidyverse)
-#     
-#     param_sample <- sample(1000,1,replace=T)
-#     
-#     # estimate ddc with random sample from parameter posterior distribution
-#     backscatter_cpue_corr <- ddc_cpue_bs(equiv_bs_length, param_ests[param_sample,])
-#     
-#     # turn backscatter into cpue
-#     ddc_table_vc <- ddc_fxn(backscatter_cpue_corr, cpue_info$p_cpue) #backscatter corr from EACH SAMPLE
-#     
-#     # randomly resample data from all years and all stations
-#     resample <- resamp_data(ddc_table_vc) #FOR EACH SAMPLE
-#     
-#     # get total population est from each resample for each year (cpue*area)
-#     resample_pop <- resamp_pop(resample, strata_metadata) %>%  #FOR EACH SAMPLE
-#       dplyr::filter(!is.na(year))
-#     
-#     # save resampled biomass
-#     resample_pop$total_ddc_kg #EACH ROW IS RESAMPLE, EACH COL IS YEARS
-#   }
-#   
-#   write_csv(as.data.frame(biomass), here("output",dir_thisyr,paste0("bootstrap_biomass_kg_", data_type, ".csv")))
-# } else if(v_cov_units == 't') {
-#   biomass <- foreach(i = 1:1000, .combine=rbind) %dopar% {
-#     library(magrittr)
-#     library(tidyverse)
-#     
-#     param_sample <- sample(1000,1,replace=T)
-#     
-#     # estimate ddc with random sample from parameter posterior distribution
-#     backscatter_cpue_corr <- ddc_cpue_bs(equiv_bs_length, param_ests[param_sample,])
-#     
-#     # turn backscatter into cpue
-#     ddc_table_vc <- ddc_fxn(backscatter_cpue_corr, cpue_info$p_cpue) #backscatter corr from EACH SAMPLE
-#     
-#     # randomly resample data from all years and all stations
-#     resample <- resamp_data(ddc_table_vc) #FOR EACH SAMPLE
-#     
-#     # get total population est from each resample for each year (cpue*area)
-#     resample_pop <- resamp_pop(resample, strata_metadata) %>%  #FOR EACH SAMPLE
-#       dplyr::filter(!is.na(year))
-#     
-#     # save resampled biomass
-#     resample_pop$total_ddc_th_t #EACH ROW IS RESAMPLE, EACH COL IS YEARS
-#   }
-#   
-#   write_csv(as.data.frame(biomass), here("output",dir_thisyr,paste0("bootstrap_biomass_th_t_", data_type, ".csv")))
-# } else(print("Invalid selection: please select k for kg or t for th t"))
 
-# v-cov check
-# sqrt(diag(biomass))/mean(diag(biomass))
-
-#### stan's bootstrapping method: ####
-if(data_type == 'db')
+# Check and save model-based results (for VAST) -------------------------------
+if(data_type == 'mb')
 {
-corr_sa <-  function(aa,ab){
+  VAST_files <- make_VAST_input(hauls = hauls_survey,
+                                spec = pollock_specimen,
+                                ddc_index = ddc_table,
+                                ddc_age = ddc_alk)
+  VAST_ddc_alk <- VAST_files$VAST_ddc_alk %>% 
+    filter(Age >= 1) # check
   
-  #calculates corrected sa by tow (corrected backscatter by tow)
+  if(VAST_files$encounter_rate == FALSE) {print("no years with 100% encounter rate")
+  }else{print("there are years with 100% encounter rate")}
   
-  by1=list(haul=aa$HAUL, subst=aa$SUBSTRATA, vessel=aa$VESSEL, year=aa$YEAR)
-  sa_station = aggregate(aa$bt_sa, by1, sum)
-  str(sa_station)
-  #hist(sa_station$x, 2000, xlim=c(0,5000))
+  print(paste0("check table: sample sizes for each age should be the same"))
+  print(table(VAST_ddc_alk$Age)) #check that sample size is same for each!
   
-  ii=1
-  sa_corr=sa_station$x[ii]/(ab$asp+exp(-(ab$int+ab$slope*sa_station$x[ii])))
-  corr_mean=mean(sa_corr)
-  corr_sd = sd(sa_corr)
-  
-  for(ii in 2:length(sa_station$x)){
-    sa_corr=sa_station$x[ii]/(ab$asp+exp(-(ab$int+ab$slope*sa_station$x[ii])))
-    corr_mean[ii]=mean(sa_corr)
-    corr_sd[ii] = sd(sa_corr) #might need na.rm = T
-  }
-  
-  #this data contains old and new estimates of sa (uncorrected and corrected backscatter estimates returned)
-  sa_sum=cbind(sa_station,corr_mean,corr_sd)
-  return(sa_sum)
+  ## Write out tables for VAST ------------------------------------------------
+  # Biomass for EBS + NBS together - dd correction 
+  write_csv(VAST_files$VAST_ddc_table, 
+            here("output", dir_thisyr, paste0("VAST_ddc_all_", current_year, ".csv")))
+  # Biomass for just EBS - dd correction
+  write_csv(VAST_files$VAST_ddc_table_EBS, 
+            here("output", dir_thisyr, paste0("VAST_ddc_EBSonly_", current_year, ".csv")))
+  # Biomass for just NBS - dd correction
+  write_csv(VAST_files$VAST_ddc_table_NBS, 
+            here("output", dir_thisyr, paste0("VAST_ddc_NBSonly_", current_year, ".csv")))
+  # Age comps for EBS + NBS together - dd correction
+  write_csv(VAST_ddc_alk, 
+            here("output", dir_thisyr, paste0("VAST_ddc_alk_", current_year, ".csv")))
 }
 
-corr_cpue <-  function(sa,bb){
-  
-  #calculates new cpue per tow (applies bs correction; eff = efficency; eff = ratio uncorr to corr, less than 1)
-  
-  eff=sa$x/sa$corr_mean
-  sa=cbind(sa,eff)
-  #str(sa)
-  
-  cc=merge(bb,sa,all=T)
-  
-  new_kgha=cc$CPUE_KGHA/cc$eff
-  new_noha=cc$CPUE_NOHA/cc$eff
-  
-  pollock_cpue_new=cbind(cc[,c(1:11,16)],new_kgha,new_noha)
-  #str(pollock_cpue_new)
-  pollock_cpue_new$new_kgha[pollock_cpue_new$CPUE_KGHA==0]=0
-  pollock_cpue_new$new_noha[pollock_cpue_new$CPUE_NOHA==0]=0
-  pollock_cpue_new$eff[pollock_cpue_new$CPUE_KGHA==0]=1
-  #write.csv(pollock_cpue_new, "pollock_cpue_new.csv")
-  
-  na.eff.cpue = data.frame(xx=pollock_cpue_new[which(is.na(pollock_cpue_new$eff)),]$CPUE_KGHA)
-  na.eff.cpue.idx=which(is.na(pollock_cpue_new$eff))
-  
-  xx=pollock_cpue_new$CPUE_KGHA
-  yy=pollock_cpue_new$eff
-  #plot(yy~xx)
-  gam1=gam(yy~s(xx))
-  #summary(gam1)
-  #plot(gam1)
-  
-  na.eff=predict(gam1,na.eff.cpue)
-  pollock_cpue_new$eff[na.eff.cpue.idx]=na.eff
-  pollock_cpue_new$new_kgha[na.eff.cpue.idx]=pollock_cpue_new$CPUE_KGHA[na.eff.cpue.idx]/na.eff
-  pollock_cpue_new$new_noha[na.eff.cpue.idx]=pollock_cpue_new$CPUE_NOHA[na.eff.cpue.idx]/na.eff
-  #write.csv(pollock_cpue_new, "pollock_cpue_new.csv")
-  #str(pollock_cpue_new)
-  
-  
-  
-  pollock_cpue_new2=pollock_cpue_new[,c(1:8,13:14,11)]
-  #str(pollock_cpue_new2)
-  colnames(pollock_cpue_new2)[c(1:3,9,10)]=c("VESSEL","YEAR","HAUL","CPUE_KGHA","CPUE_NOHA")
-  #str(pollock_cpue_new2)
-  
-  return(pollock_cpue_new2) #returns the DDC cpue
-  
-}
 
-ncpue_sample <-  function(ncpue){
-  first.y=min(ncpue$YEAR) #for each year
-  last.y=max(ncpue$YEAR)
+# Save design-based results ---------------------------------------------------
+# CIA: note to separate out EBS and NBS: NBS_subarea for stratum values; I set subarea of NBS = 0; all other values are EBS
+if(data_type == 'db') {
+  # Tables Jim Ianelli needs (all EBS + NBS):
+  write_csv(tables$cpue_info$avg_cpue_yr_strat,  # CPUE (number of fish) - uncorrected 
+            here("output", dir_thisyr,paste0("CPUE_uncorrected_", current_year, ".csv")))
+  write_csv(tables$cpue_info$p_cpue,  # add CPUE by station  
+            here("output", dir_thisyr, paste0("CPUE_bystn_uncorrected_", current_year, ".csv")))
   
-  ii=first.y
-  ncpue.y=ncpue[ncpue$YEAR==ii,] #select a specific year
-  subs=unique(ncpue.y$SUBSTRATA) #for each strata; get strata from that year
-  jj=subs[1]
-  ncpue.y.s=ncpue.y[ncpue.y$SUBSTRATA==jj,] #select specific year and strata
-  nn=length(ncpue.y.s[,1]) #number samples wanted
-  samp=sample.int(nn, size = nn, replace=T) # randomly pick order, possibly with duplicates
-  ncpue.y.s.n=ncpue.y.s[samp,] #arrange in random order
-  for(jj in subs[-1]){
-    ncpue.y.s=ncpue.y[ncpue.y$SUBSTRATA==jj,] #
-    nn=length(ncpue.y.s[,1])
-    samp=sample.int(nn, size = nn, replace=T)
-    ncpue.y.s.n=rbind(ncpue.y.s.n,ncpue.y.s[samp,])
-    # estimate of one realization of estimating cpue; with all substrata, 1st year
-  }
-  ncpue.y.n=ncpue.y.s.n
+  write_csv(ddc$ddc_cpue,  # CPUE (number of fish) - dd corrected  
+            here("output", dir_thisyr, paste0("CPUE_densdep_corrected_", current_year, ".csv")))
+  write_csv(ddc_table,  # add CPUE by station 
+            here("output", dir_thisyr, paste0("CPUE_densdep_bystn_corrected_", current_year, ".csv")))
   
-  for(ii in (first.y+1):last.y){ #this is for all remaining years (with all substrata)
-    ncpue.y=ncpue[ncpue$YEAR==ii,]
-    subs=unique(ncpue.y$SUBSTRATA)
-    jj=subs[1]
-    ncpue.y.s=ncpue.y[ncpue.y$SUBSTRATA==jj,]
-    nn=length(ncpue.y.s[,1])
-    samp=sample.int(nn, size = nn, replace=T)
-    ncpue.y.s.n=ncpue.y.s[samp,]
-    for(jj in subs[-1]){
-      ncpue.y.s=ncpue.y[ncpue.y$SUBSTRATA==jj,]
-      nn=length(ncpue.y.s[,1])
-      samp=sample.int(nn, size = nn, replace=T)
-      ncpue.y.s.n=rbind(ncpue.y.s.n,ncpue.y.s[samp,])
-    }
-    ncpue.y.n=rbind(ncpue.y.n,ncpue.y.s.n)
-    
-  }
-  return(ncpue.y.n) #one realization of cpue est for all years and all substrata
-}
-
-corr_population <-  function(aa,bb){
+  write_csv(tables$cpue_length_table,  # CPUE (number of fish, by length) - uncorrected 
+            here("output", dir_thisyr, paste0("length_cpue_numfish_uncorrected_", current_year, ".csv")))
+  write_csv(tables$pop_info$pollock_biomass_MT_ha,  # Biomass (thousands of tons) - uncorrected 
+            here("output", dir_thisyr, paste0("biomass_uncorrected_", current_year, ".csv")))
+  write_csv(ddc$ddc_pop_ests$pollock_biomass_MT_ha,  # Biomass (thousands of tons) - dd corrected
+            here("output", dir_thisyr, paste0("biomass_densdep_corrected_", current_year, ".csv")))
+  write_csv(ddc$ddc_pop_ests_EBS,  # Biomass (thousands of tons) just EBS - dd corrected
+            here("output", dir_thisyr, paste0("biomass_densdep_corrected_EBSonly_", current_year, ".csv")))
+  write_csv(ddc$ddc_pop_ests_NBS,  # Biomass (thousands of tons) just NBS - dd corrected 
+            here("output", dir_thisyr, paste0("biomass_densdep_corrected_NBSonly_", current_year, ".csv")))
   
-  by1=list(aa$YEAR,aa$SUBSTRATA)
-  cc=aggregate(cbind(aa$CPUE_KGHA,aa$CPUE_NOHA),by1,mean,na.rm=T) #get mean by year and strata
-  colnames(cc)=c("year","substrata","m_kgha","m_noha")
-  colnames(bb)=c("substrata","area")
-  cc1=merge(cc,bb,all=T) #add area back
-  # cc1=cc1[cc1$substrata!=70,] #filter out NBS
-  # cc1=cc1[cc1$substrata!=81,]
-  pop_by_strata = cc1[,3:4]*cc1[,5] #get number by multiplying cpue by area fished (cpue = num/ha; area = km^2; need to *100 to get km^2 -> ha-- done 3 lines below)
-  by2=list(cc1$year)
-  total_pop=aggregate(pop_by_strata,by2,sum) #sum by year
-  total_pop1=cbind(year=total_pop[,1],tons=total_pop[,2]/10,mlns=total_pop[,3]/10000) # years, convert to kg to tons, convernt num to millions
-  return(total_pop1)
-}
-
-ab <- param_ests
-
-bb <- cpue_info$p_cpue %>%  #cpue
-  rename(CRUISE = cruise, SUBSTRATA = stratum, 
-         LATITUDE = start_latitude, LONGITUDE = start_longitude,
-         CPUE_KGHA = cpue_kg_ha, CPUE_NOHA = cpue_num_ha, AREA_FISHED = area_fished_ha) %>% 
-  mutate(SPECIES_CODE = 21740) %>% 
-  dplyr::select("vessel", "CRUISE", "year", "haul", "SUBSTRATA", "LATITUDE", "LONGITUDE", 
-                "SPECIES_CODE", "CPUE_KGHA", "CPUE_NOHA", "AREA_FISHED") #%>% 
-  # dplyr::filter(!SUBSTRATA %in% NBS_subarea)
+  # Variance-covariance tables from Stan's method
+  write_csv(as.data.frame(db_bootstrap$bioms), 
+            here("output", dir_thisyr, paste0("bootstrap_biomass_tons_stan_method", current_year,"_", data_type, ".csv")))
+  write_csv(as.data.frame(db_bootstrap$var_covar_stan), 
+            here("output", dir_thisyr, paste0("var_cov_matrix_tons_stan_method", current_year,"_", data_type, ".csv")))
   
-# bb_sub <- bb %>% dplyr::select("vessel", "CRUISE", "year", "haul", "SUBSTRATA", "LATITUDE", "LONGITUDE") %>% 
-#   clean_names(case = 'all_caps')
-
-aa <- equiv_bs_length %>%  #cpue length
-  clean_names(case = 'all_caps') %>% 
-  rename(cpue_mile = CPUE_MILE_SQ, ts = TARGET_STRENGTH, bt_sa = BACKSCATTER, 
-         CRUISE = CRUISEJOIN, SUBSTRATA = STRATUM, CPUE_LENGTH = CPUE_LENGTH_NUM_HA) %>%
-  # left_join(bb_sub) %>% 
-  mutate( LATITUDE = NA, LONGITUDE = NA, 
-    SPECIES_CODE = 21740) %>% 
-  dplyr::select("VESSEL", "YEAR", "CRUISE", "HAUL", "LATITUDE", "LONGITUDE", "SUBSTRATA", 
-                "STATIONID", "SPECIES_CODE", "SEX", "LENGTH", "CPUE_LENGTH", 
-                "cpue_mile",  "ts", "bt_sa") #%>% 
-  # dplyr::filter(!SUBSTRATA %in% NBS_subarea)
-
-gg <- strata_metadata %>%  #strata
-  rename(area_ha = area) %>% 
-  dplyr::select( "stratum", "area_ha") #%>% 
-  # dplyr::filter(!stratum %in% NBS_subarea)
+  write_csv(ddc$ddc_cpue_length_table,  # Length compositions - dd corrected 
+            here("output", dir_thisyr, paste0("length_comps_densdep_corrected_", current_year, ".csv")))
   
-ii=sample(1000,1) #randome number btw 1 and 1000
-sa_sum = corr_sa(aa,ab[ii,]) #estimates corr sa based on params from abc_exp
-ncpue = corr_cpue(sa_sum,bb) #estimates cpue based on param
-ncpue.s = ncpue_sample(ncpue) #gets ncpue sample
-estim=corr_population(ncpue.s,gg) #get corr pop based on random param selected
-pops=estim[,3] #pop vector
-bioms=estim[,2] #biomass vector
-
-for(ii in sample(1000,999,replace=T)){ #run 1000 times (999 more times), randomly sampling
-  sa_sum = corr_sa(aa,ab[ii,])
-  ncpue = corr_cpue(sa_sum,bb)
-  ncpue.s = ncpue_sample(ncpue)
-  estim=corr_population(ncpue.s,gg)
-  popsii=estim[,3]
-  biomsii=estim[,2]
-  pops=rbind(pops,popsii) #rows = resamples, cols = yrs
-  bioms=rbind(bioms,biomsii)
-  print(length(pops[,1]))
-}
-colnames(bioms) = unique(aa$YEAR)
-bioms
-var_covar_stan = cov(bioms)
-colnames(var_covar_stan) = unique(aa$YEAR)
-rownames(var_covar_stan) = unique(aa$YEAR)
-
-# check:
-biomass_mean <- bioms %>% as_tibble() %>% summarise_if(is.numeric, mean) 
-colnames(biomass_mean) <- unique(ddc_table$year)
-cv <- sqrt(diag(var_covar_stan))/biomass_mean
-range(cv) #range should be 5-20%
-if(max(range(cv)) > 0.2){print("YOUR CV IS > 20% PLEASE CHECK")}
-}
-
-# convert new 5 -----------------------------------------------------------
-
-# CORRECTION: this section is commented out-- v-cov matrix generated above in stan's code version
-
-# get variance-covariance matrix from resampled data
-# var_covar_pop_num = cov(population)
-
-# var_covar_biomass = cov(biomass)
-# 
-# # then rename rows and columns
-# colnames(var_covar_biomass) <- resample_pop$year
-# rownames(var_covar_biomass) <- resample_pop$year
-# 
-# # check:
-# biomass_mean <- biomass %>% as_tibble() %>% summarise_if(is.numeric, mean) 
-# colnames(biomass_mean) <- unique(ddc_table$year)
-# cv <- sqrt(diag(var_covar_biomass))/biomass_mean
-# range(cv) #range should be 5-20%
-# if(max(range(cv)) > 0.2){print("YOUR CV IS > 20% PLEASE RE-CHECK")}
-
-# # ianelli check:
-# c1 <- var_covar_biomass
-# d1 <- sqrt(diag(c1))
-# d2 <- as.vector(d1/1000)
-# c2 <- cov2cor(c1)
-# c3 <- sweep(sweep(c2, 1L, d2), 2L, d2)
-# all.equal(c3,c1)
-
-# measured ----------------------------------------------------------------
-
-if(data_type == 'db')
-{
+  # Calculate metrics of hauls, number of lengths, etc. per year
   annual_metrics <- get_annual_metrics(hauls_ebs = hauls_survey_ebs, 
                                        hauls_nbs = hauls_survey_nbs, 
                                        length = pollock_raw_length_ebs,
@@ -688,183 +466,24 @@ if(data_type == 'db')
                                        spec_nbs = pollock_specimen_nbs,
                                        this_yr = current_year, 
                                        nbs_subarea = NBS_subarea)
-  num_hauls_tot <- annual_metrics$num_hauls_tot
-  fish_measured <- annual_metrics$fish_measured
-  fish_aged <- annual_metrics$fish_aged
-}
-
-
-# VAST prep section -------------------------------------------------------
-if(data_type == 'mb')
-{
-  VAST_files <- make_VAST_input(hauls = hauls_survey,
-                                spec = pollock_specimen,
-                                ddc_index = ddc_table,
-                                ddc_age = ddc_alk)
-  VAST_ddc_table <- VAST_files$VAST_ddc_table
-  VAST_ddc_table_EBS <- VAST_files$VAST_ddc_table_EBS
-  VAST_ddc_table_NBS <- VAST_files$VAST_ddc_table_NBS
-  VAST_ddc_alk <- VAST_files$VAST_ddc_alk %>% 
-    dplyr::filter(Age >= 1) #check
   
-  if(VAST_files$encounter_rate == FALSE) {print("no years with 100% encounter rate")
-  }else{print("there are years with 100% encounter rate")}
+  write_lines(annual_metrics$num_hauls_tot,  # Number of stations (by year)
+              here("output", dir_thisyr, paste0("info_hauls_peryr_", current_year, ".txt")))
+  write_lines(annual_metrics$fish_measured,  # Number of fish measured (by year)
+              here("output", dir_thisyr, paste0("info_n_fish_measured_", current_year, ".txt")))
+  write_lines(fish_aged,  # Number of fish aged (by year)
+              here("output", dir_thisyr, paste0("info_n_fish_aged_", current_year, ".txt")))
   
-  print(paste0("check table: sample sizes for each age should be the same"))
-  print(table(VAST_ddc_alk$Age)) #check that sample size is same for each!
-}
-# final output ------------------------------------------------------------
-
-# CIA: note to separate out EBS and NBS: NBS_subarea for stratum values; I set subarea of NBS = 0; all other values are EBS
-if(data_type == 'db')
-{
-  #   Tables Jim Ianelli needs (all EBS + NBS):
-  #     - CPUE (number of fish) - uncorrected           cpue_info$avg_cpue_yr_strat
-  #     - CPUE (kg/hectare)     - uncorrected           cpue_info$avg_cpue_yr_strat
-  write_csv(cpue_info$avg_cpue_yr_strat, here("output", dir_thisyr,paste0(
-    "CPUE_uncorrected_", current_year, ".csv"
-  )))
-  #     --> add CPUE by station                         cpue_info$p_cpue
-  write_csv(cpue_info$p_cpue, here(
-    "output", dir_thisyr,
-    paste0("CPUE_bystn_uncorrected_", current_year, ".csv")
-  ))
-  
-  #     - CPUE (number of fish) - dd corrected          ddc_cpue
-  #     - CPUE (kg/hectare)     - dd corrected          ddc_cpue
-  write_csv(ddc_cpue, here(
-    "output", dir_thisyr,
-    paste0("CPUE_densdep_corrected_", current_year, ".csv")
-  ))
-  #     --> add CPUE by station                         ddc_table
-  write_csv(ddc_table, here(
-    "output", dir_thisyr,
-    paste0("CPUE_densdep_bystn_corrected_", current_year, ".csv")
-  ))
-  
-  
-  #     - CPUE (number of fish, by length) - uncorrected  length_comps$sizecomp_cpue_stn
-  write_csv(cpue_length_table, here(
-    "output", dir_thisyr,
-    paste0("length_cpue_numfish_uncorrected_", current_year, ".csv")
-  ))
-  #     - CPUE (kg/hectare, by length)     - uncorrected  length_comps$sizecomp_cpue_stn; cpue_length_table CIA: in number/ha
-  #
-  #     - Biomass (thousands of tons) - uncorrected     pop_info$pollock_biomass_MT_ha
-  write_csv(pop_info$pollock_biomass_MT_ha, here(
-    "output", dir_thisyr,
-    paste0("biomass_uncorrected_", current_year, ".csv")
-  ))
-  #     - Biomass (thousands of tons) - dd corrected    ddc_pop_ests$pollock_biomass_MT_ha
-  write_csv(ddc_pop_ests$pollock_biomass_MT_ha,
-            here(
-              "output", dir_thisyr,
-              paste0("biomass_densdep_corrected_", current_year, ".csv")
-            ))
-  #     - Biomass (thousands of tons) just EBS - dd corrected   ddc_pop_ests_EBS
-  write_csv(ddc_pop_ests_EBS, here(
-    "output", dir_thisyr,
-    paste0("biomass_densdep_corrected_EBSonly_", current_year, ".csv")
-  ))
-  #     - Biomass (thousands of tons) just NBS - dd corrected   ddc_pop_ests_NBS
-  write_csv(ddc_pop_ests_NBS, here(
-    "output", dir_thisyr,
-    paste0("biomass_densdep_corrected_NBSonly_", current_year, ".csv")
-  ))
-  #
-  #     - Co-variance matrix (biomass; thousands of tons) - dd corrected    var_covar_biomass
-  #         -> additional table converted to th t
-  # # Caitlin's tables are commented out; Stan's tables are the new default output
-  # if (v_cov_units == 'k')
-  # {
-  #   write_csv(as.data.frame(var_covar_biomass),
-  #             here(
-  #               "output", dir_thisyr,
-  #               paste0("var_cov_matrix_kg_", current_year,"_", data_type, ".csv")
-  #             ))
-  # } else if (v_cov_units == 't')
-  # {
-  #   write_csv(as.data.frame(var_covar_biomass),
-  #             here(
-  #               "output", dir_thisyr,
-  #               paste0("var_cov_matrix_th_t_", current_year, "_", data_type, ".csv")
-  #             ))
-  # }
-  
-  write_csv(as.data.frame(bioms), here(
-    "output", dir_thisyr,
-    paste0("bootstrap_biomass_tons_stan_method", current_year,"_", data_type, ".csv")
-  ))
-  write_csv(as.data.frame(var_covar_stan), here(
-    "output", dir_thisyr,
-    paste0("var_cov_matrix_tons_stan_method", current_year,"_", data_type, ".csv")
-  ))
-  
-  #
-  #     - Length compositions - dd corrected            ddc_cpue_length_table
-  write_csv(ddc_cpue_length_table, here(
-    "output", dir_thisyr,
-    paste0("length_comps_densdep_corrected_", current_year, ".csv")
-  ))
-  
-  #     OTHER INFO:
-  #       - number of stations (by year)          num_hauls_tot
-  write_lines(num_hauls_tot, here("output", dir_thisyr, paste0(
-    "info_hauls_peryr_", current_year, ".txt"
-  )))
-  #       - number of fish measured (by year)     fish_measured
-  write_lines(fish_measured, here(
-    "output", dir_thisyr,
-    paste0("info_n_fish_measured_", current_year, ".txt")
-  ))
-  #       - number of fish aged (by year)         fish_aged
-  write_lines(fish_aged, here("output", dir_thisyr, paste0(
-    "info_n_fish_aged_", current_year, ".txt"
-  )))
-  
-  #       - station-specific temperature (bottom temp) + add to station cpue table
-  
-  #       - extra: full ddc alk
-  write_csv(ddc_alk, here(
-    "output", dir_thisyr,
-    paste0(
-      "age_length_key_full_densdep_corrected",
-      current_year,
-      ".csv"
-    )
-  ))
-  write_csv(age_comp_full_key, here(
-    "output", dir_thisyr,
-    paste0("age_length_key_full_uncorrected_", current_year, ".csv")
-  ))
-  # age comps summary:
-  write_csv(ddc_al_key, here(
-    "output", dir_thisyr,
-    paste0(
-      "age_length_key_SUMMARY_densdep_corrected",
-      current_year,
-      ".csv"
-    )
-  ))
+  # Extra stuff
+  write_csv(ddc_alk,  # Full DDC ALK
+            here("output", dir_thisyr, paste0("age_length_key_full_densdep_corrected", current_year, ".csv")))
+  write_csv(age_comp_full_key, 
+            here("output", dir_thisyr, paste0("age_length_key_full_uncorrected_", current_year, ".csv")))
+  write_csv(ddc_al_key,  # DDC ALK summary
+            here("output", dir_thisyr, paste0("age_length_key_SUMMARY_densdep_corrected", current_year, ".csv")))
   
 }
 
-if(data_type == 'mb')
-{
-  #     PREP for VAST:
-  #      - biomass for EBS + NBS together  - dd correction   VAST_ddc_table
-  write_csv(VAST_ddc_table, here("output", dir_thisyr,paste0("VAST_ddc_all_", current_year, ".csv")))
-  #      - biomass for just EBS            - dd correction
-  write_csv(VAST_ddc_table_EBS, here("output", dir_thisyr,paste0(
-    "VAST_ddc_EBSonly_", current_year, ".csv"
-  )))
-  #      - biomass for just NBS            - dd correction
-  write_csv(VAST_ddc_table_NBS, here("output", dir_thisyr,paste0(
-    "VAST_ddc_NBSonly_", current_year, ".csv"
-  )))
-  #      - age comps for EBS + NBS together- dd correction
-  write_csv(VAST_ddc_alk, here("output", dir_thisyr,paste0("VAST_ddc_alk_", current_year, ".csv")))
-}
 
 # Table requests by others ------------------------------------------------
 
