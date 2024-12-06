@@ -4,8 +4,7 @@
 # Date created: 2022.06.02
 # Date updated: 2022.06.02
 
-slope_survey_d <- function()
-{
+slope_survey_d <- function() {
   query_command <- paste0(" select * from SAFE.survey;")
   all_survey_info <- sqlQuery(channel, query_command) %>% 
     as_tibble() %>% 
@@ -17,8 +16,7 @@ slope_survey_d <- function()
   return(slope_survey)
 }
 
-haul_data_d <- function(data_selection = "db", nbs_subarea = c(81, 70, 71), slope_info)
-{
+haul_data_d <- function(data_selection = "db", nbs_subarea = c(81, 70, 71), slope_info) {
   # DB: design-based: ebs and nbs separate; nbs = 2010+; no 2018 nbs
   # through 2021
   query_command <- paste0("select * from SAFE.pollock_historical_design_hauls")
@@ -165,9 +163,7 @@ haul_data_d <- function(data_selection = "db", nbs_subarea = c(81, 70, 71), slop
   
 }
 
-specimen_data_d <- function(hauls_survey_dat)
-{
-  hauls_survey_dat <- hauls_survey
+specimen_data_d <- function(hauls_survey_dat) {
   hauljoins <- hauls_survey_dat$hauljoin
   # SNW: remove "and a.age is not null" to create estimated ALK for current year
   query_command <- paste0("select a.CRUISEJOIN, a.HAULJOIN, a.REGION, a.VESSEL, a.CRUISE, a.HAUL,
@@ -189,8 +185,7 @@ specimen_data_d <- function(hauls_survey_dat)
   return(pollock_spec)
 }
 
-catch_data_d <- function(hauljoins)
-{
+catch_data_d <- function(hauljoins) {
   query_command <- paste0(" SELECT * FROM racebase.catch
                            WHERE region='BS' and species_code = 21740")
   pollock_catch <- sqlQuery(channel, query_command) %>% 
@@ -200,8 +195,7 @@ catch_data_d <- function(hauljoins)
   return(pollock_catch)
 }
 
-length_data_d <- function(hauljoins)
-{
+length_data_d <- function(hauljoins) {
   query_command <- paste0(" SELECT * FROM racebase.length
                            WHERE region='BS' and species_code = 21740")
   pollock_length <- sqlQuery(channel, query_command) %>% 
@@ -231,8 +225,7 @@ length_data_d <- function(hauljoins)
               pollock_raw_length = pollock_raw_length))
 }
 
-metadata_d <- function(cruise_id = cruise, vessel_code_id = vessel_code, pollock_specimen_data = pollock_specimen, meta_select = strat_meta_year)
-{
+metadata_d <- function(cruise_id = cruise, vessel_code_id = vessel_code, pollock_specimen_data = pollock_specimen, meta_select = strat_meta_year) {
   # get most recent year of metadata (most recent cruise and vessel)
   query_command <- paste0(" SELECT * FROM racebase.cruise WHERE cruise in (",
                           cruise_id, ") and region='BS' and vessel in(", vessel_code_id, "); ")

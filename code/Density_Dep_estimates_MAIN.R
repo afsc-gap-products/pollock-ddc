@@ -120,12 +120,12 @@ NBS_subarea <- c(81, 70, 71, 99) # NBS stratum numbers; added 99 to indicate 201
 # Strata metadata year; 2022 is the latest update (use for current assessments)
 strat_meta_year <- 2022
 
+# Set output - model- or design-based
 data_type <- "mb"
 
 # Set up folder 
 dir_thisyr <- paste0(current_year,"_", data_type, "_data_", strat_meta_year, "_strata")
 dir.create(here("output",dir_thisyr))
-
 
 # data --------------------------------------------------------------------
 process_data <- function(first_run = TRUE, estimate_ages = FALSE, save_data = TRUE) {
@@ -150,17 +150,18 @@ process_data <- function(first_run = TRUE, estimate_ages = FALSE, save_data = TR
   get_hauls <- haul_data_d(data_selection = data_type, 
                            nbs_subarea = NBS_subarea, 
                            slope_info = slope_survey)
-
-  hauls_survey_ebs <- get_hauls$good_hauls_DB_EBS
-  hauls_survey_nbs <- get_hauls$good_hauls_DB_NBS
-  hauls_survey_bad_ebs <- get_hauls$bad_hauls_DB_ebs
-  hauls_survey_bad_nbs <- get_hauls$bad_hauls_DB_nbs
-  all_hauljoins <- c(hauls_survey_ebs$hauljoin, hauls_survey_bad_ebs$hauljoin)
-  all_hauljoins_nbs <- c(hauls_survey_nbs$hauljoin, hauls_survey_bad_nbs$hauljoin)
-  valid_hauljoins_nbs <- hauls_survey_nbs$hauljoin
-  hauls_survey <- hauls_survey_ebs %>% bind_rows(hauls_survey_nbs)
-  hauls_survey_bad <- hauls_survey_bad_ebs %>% bind_rows(hauls_survey_bad_nbs)
   
+  if(data_type == "db") {
+    hauls_survey_ebs <- get_hauls$good_hauls_DB_EBS
+    hauls_survey_nbs <- get_hauls$good_hauls_DB_NBS
+    hauls_survey_bad_ebs <- get_hauls$bad_hauls_DB_ebs
+    hauls_survey_bad_nbs <- get_hauls$bad_hauls_DB_nbs
+    all_hauljoins <- c(hauls_survey_ebs$hauljoin, hauls_survey_bad_ebs$hauljoin)
+    all_hauljoins_nbs <- c(hauls_survey_nbs$hauljoin, hauls_survey_bad_nbs$hauljoin)
+    valid_hauljoins_nbs <- hauls_survey_nbs$hauljoin
+    hauls_survey <- hauls_survey_ebs %>% bind_rows(hauls_survey_nbs)
+    hauls_survey_bad <- hauls_survey_bad_ebs %>% bind_rows(hauls_survey_bad_nbs)
+  }
   if(data_type == "mb") {
     hauls_survey <- get_hauls$good_hauls_MB
     hauls_survey_bad <- get_hauls$bad_hauls
