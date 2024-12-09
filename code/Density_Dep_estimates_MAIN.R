@@ -294,7 +294,8 @@ process_data <- function(first_run = TRUE, estimate_ages = FALSE, save_data = TR
     select(- latitude, -longitude, -species_code)
   
   ## Return tables for next step ----------------------------------------------
-  return(list(hauls_survey = hauls_survey, 
+  return(list(slope_survey = slope_survey,
+              hauls_survey = hauls_survey, 
               pollock_specimen = pollock_specimen,
               pollock_catch = pollock_catch,
               pollock_length = pollock_length,
@@ -392,12 +393,12 @@ db_bootstrap <- bootstrapping()
 
 
 # Check and save model-based results (for VAST) -------------------------------
-if(data_type == 'mb')
-{
+if(data_type == 'mb') {
   VAST_files <- make_VAST_input(hauls = hauls_survey,
                                 spec = pollock_specimen,
                                 ddc_index = ddc_table,
-                                ddc_age = ddc_alk)
+                                ddc_age = ddc_alk,
+                                slope_survey = tables$slope_survey)
   VAST_ddc_alk <- VAST_files$VAST_ddc_alk %>% 
     filter(Age >= 1) # check
   
