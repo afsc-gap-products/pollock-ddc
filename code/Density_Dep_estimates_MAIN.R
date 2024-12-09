@@ -393,6 +393,10 @@ db_bootstrap <- bootstrapping()
 
 
 # Check and save model-based results (for VAST) -------------------------------
+# Repeated file path pieces
+output <- here("output", dir_thisyr)
+file_end <- paste0("_", current_year, ".csv")
+
 if(data_type == 'mb') {
   VAST_files <- make_VAST_input(hauls = hauls_survey,
                                 spec = pollock_specimen,
@@ -409,18 +413,14 @@ if(data_type == 'mb') {
   print(table(VAST_ddc_alk$Age)) #check that sample size is same for each!
   
   ## Write out tables for VAST ------------------------------------------------
-  # Biomass for EBS + NBS together - dd correction 
-  write_csv(VAST_files$VAST_ddc_table, 
-            here("output", dir_thisyr, paste0("VAST_ddc_all_", current_year, ".csv")))
-  # Biomass for just EBS - dd correction
-  write_csv(VAST_files$VAST_ddc_table_EBS, 
-            here("output", dir_thisyr, paste0("VAST_ddc_EBSonly_", current_year, ".csv")))
-  # Biomass for just NBS - dd correction
-  write_csv(VAST_files$VAST_ddc_table_NBS, 
-            here("output", dir_thisyr, paste0("VAST_ddc_NBSonly_", current_year, ".csv")))
-  # Age comps for EBS + NBS together - dd correction
-  write_csv(VAST_ddc_alk, 
-            here("output", dir_thisyr, paste0("VAST_ddc_alk_", current_year, ".csv")))
+  write_csv(VAST_files$VAST_ddc_table,  # Biomass for EBS + NBS together - dd correction 
+            here(output, paste0("VAST_ddc_all", file_end)))
+  write_csv(VAST_files$VAST_ddc_table_EBS,  # Biomass for just EBS - dd correction
+            here(output, paste0("VAST_ddc_EBSonly", file_end)))
+  write_csv(VAST_files$VAST_ddc_table_NBS,  # Biomass for just NBS - dd correction
+            here(output, paste0("VAST_ddc_NBSonly", file_end)))
+  write_csv(VAST_ddc_alk,  # Age comps for EBS + NBS together - dd correction
+            here(output, paste0("VAST_ddc_alk", file_end)))
 }
 
 
@@ -429,34 +429,34 @@ if(data_type == 'mb') {
 if(data_type == 'db') {
   # Tables Jim Ianelli needs (all EBS + NBS):
   write_csv(tables$cpue_info$avg_cpue_yr_strat,  # CPUE (number of fish) - uncorrected 
-            here("output", dir_thisyr,paste0("CPUE_uncorrected_", current_year, ".csv")))
+            here(output, paste0("CPUE_uncorrected", file_end)))
   write_csv(tables$cpue_info$p_cpue,  # add CPUE by station  
-            here("output", dir_thisyr, paste0("CPUE_bystn_uncorrected_", current_year, ".csv")))
+            here(output, paste0("CPUE_bystn_uncorrected", file_end)))
   
   write_csv(ddc$ddc_cpue,  # CPUE (number of fish) - dd corrected  
-            here("output", dir_thisyr, paste0("CPUE_densdep_corrected_", current_year, ".csv")))
+            here(output, paste0("CPUE_densdep_corrected", file_end)))
   write_csv(ddc_table,  # add CPUE by station 
-            here("output", dir_thisyr, paste0("CPUE_densdep_bystn_corrected_", current_year, ".csv")))
+            here(output, paste0("CPUE_densdep_bystn_corrected", file_end)))
   
   write_csv(tables$cpue_length_table,  # CPUE (number of fish, by length) - uncorrected 
-            here("output", dir_thisyr, paste0("length_cpue_numfish_uncorrected_", current_year, ".csv")))
+            here(output, paste0("length_cpue_numfish_uncorrected", file_end)))
   write_csv(tables$pop_info$pollock_biomass_MT_ha,  # Biomass (thousands of tons) - uncorrected 
-            here("output", dir_thisyr, paste0("biomass_uncorrected_", current_year, ".csv")))
+            here(output, paste0("biomass_uncorrected", file_end)))
   write_csv(ddc$ddc_pop_ests$pollock_biomass_MT_ha,  # Biomass (thousands of tons) - dd corrected
-            here("output", dir_thisyr, paste0("biomass_densdep_corrected_", current_year, ".csv")))
+            here(output, paste0("biomass_densdep_corrected", file_end)))
   write_csv(ddc$ddc_pop_ests_EBS,  # Biomass (thousands of tons) just EBS - dd corrected
-            here("output", dir_thisyr, paste0("biomass_densdep_corrected_EBSonly_", current_year, ".csv")))
+            here(output, paste0("biomass_densdep_corrected_EBSonly", file_end)))
   write_csv(ddc$ddc_pop_ests_NBS,  # Biomass (thousands of tons) just NBS - dd corrected 
-            here("output", dir_thisyr, paste0("biomass_densdep_corrected_NBSonly_", current_year, ".csv")))
+            here(output, paste0("biomass_densdep_corrected_NBSonly", file_end)))
   
   # Variance-covariance tables from Stan's method
   write_csv(as.data.frame(db_bootstrap$bioms), 
-            here("output", dir_thisyr, paste0("bootstrap_biomass_tons_stan_method", current_year,"_", data_type, ".csv")))
+            here(output, paste0("bootstrap_biomass_tons_stan_method", current_year,"_", data_type, ".csv")))
   write_csv(as.data.frame(db_bootstrap$var_covar_stan), 
-            here("output", dir_thisyr, paste0("var_cov_matrix_tons_stan_method", current_year,"_", data_type, ".csv")))
+            here(output, paste0("var_cov_matrix_tons_stan_method", current_year,"_", data_type, ".csv")))
   
   write_csv(ddc$ddc_cpue_length_table,  # Length compositions - dd corrected 
-            here("output", dir_thisyr, paste0("length_comps_densdep_corrected_", current_year, ".csv")))
+            here(output, paste0("length_comps_densdep_corrected", file_end)))
   
   # Calculate metrics of hauls, number of lengths, etc. per year
   annual_metrics <- get_annual_metrics(hauls_ebs = hauls_survey_ebs, 
@@ -469,19 +469,19 @@ if(data_type == 'db') {
                                        nbs_subarea = NBS_subarea)
   
   write_lines(annual_metrics$num_hauls_tot,  # Number of stations (by year)
-              here("output", dir_thisyr, paste0("info_hauls_peryr_", current_year, ".txt")))
+              here(output, paste0("info_hauls_peryr", file_end)))
   write_lines(annual_metrics$fish_measured,  # Number of fish measured (by year)
-              here("output", dir_thisyr, paste0("info_n_fish_measured_", current_year, ".txt")))
+              here(output, paste0("info_n_fish_measured", file_end)))
   write_lines(fish_aged,  # Number of fish aged (by year)
-              here("output", dir_thisyr, paste0("info_n_fish_aged_", current_year, ".txt")))
+              here(output, paste0("info_n_fish_aged", file_end)))
   
   # Extra stuff
   write_csv(ddc_alk,  # Full DDC ALK
-            here("output", dir_thisyr, paste0("age_length_key_full_densdep_corrected", current_year, ".csv")))
+            here(output, paste0("age_length_key_full_densdep_corrected", file_end)))
   write_csv(age_comp_full_key, 
-            here("output", dir_thisyr, paste0("age_length_key_full_uncorrected_", current_year, ".csv")))
+            here(output, paste0("age_length_key_full_uncorrected_", file_end)))
   write_csv(ddc_al_key,  # DDC ALK summary
-            here("output", dir_thisyr, paste0("age_length_key_SUMMARY_densdep_corrected", current_year, ".csv")))
+            here(output, paste0("age_length_key_SUMMARY_densdep_corrected", file_end)))
   
 }
 
