@@ -67,11 +67,11 @@ library(here)
 library(tidyverse)
 library(RODBC)
 library(janitor)
+library(mgcv)
 
 # library(magrittr)
 # library(lubridate)
 # library(modelr)
-# library(mgcv)
 # library(googledrive)
 
 functions <- list.files(here("functions"))
@@ -146,14 +146,14 @@ NBS_subarea <- c(81, 70, 71, 99) # NBS stratum numbers; added 99 to indicate 201
 strat_meta_year <- 2022
 
 # Set output - model- or design-based
-data_type <- "mb"
+data_type <- "db"
 
 # Set up folder 
 dir_thisyr <- paste0(current_year,"_", data_type, "_data_", strat_meta_year, "_strata")
 dir.create(here("output",dir_thisyr))
 
 # data --------------------------------------------------------------------
-process_data <- function(first_run = TRUE, estimate_ages = FALSE, save_data = FALSE) {
+process_data <- function(first_run = TRUE, estimate_ages = FALSE, save_data = TRUE) {
   # Don't include slope survey for VAST
   slope_survey <- slope_survey_d()
   
@@ -409,7 +409,7 @@ bootstrapping <- function() {
   }
   
   if(data_type == "db") {
-    bootstrap_stan()
+    bootstrap_stan(cpue_length_table = tables$cpue_length_table, cpue_info = tables$cpue_info)
   }
 }
 

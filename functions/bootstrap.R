@@ -100,7 +100,7 @@
 # sqrt(diag(biomass))/mean(diag(biomass))
 
 #### stan's bootstrapping method: ####
-bootstrap_stan <- function() {
+bootstrap_stan <- function(cpue_length_table, cpue_info) {
   if(data_type == "db") {
     corr_sa <-  function(aa,ab){
       # calculates corrected sa by tow (corrected backscatter by tow)
@@ -225,6 +225,7 @@ bootstrap_stan <- function() {
       return(total_pop1)
     }
     
+    param_ests <-  read_csv(here("from_stan", "abc_exp.csv"))
     ab <- param_ests
     
     bb <- cpue_info$p_cpue %>%  #cpue
@@ -239,6 +240,7 @@ bootstrap_stan <- function() {
     # bb_sub <- bb %>% dplyr::select("vessel", "CRUISE", "year", "haul", "SUBSTRATA", "LATITUDE", "LONGITUDE") %>% 
     #   clean_names(case = 'all_caps')
     
+    equiv_bs_length <- backscatter_est(cpue_length_table)
     aa <- equiv_bs_length %>%  #cpue length
       clean_names(case = 'all_caps') %>% 
       rename(cpue_mile = CPUE_MILE_SQ, ts = TARGET_STRENGTH, bt_sa = BACKSCATTER, 
