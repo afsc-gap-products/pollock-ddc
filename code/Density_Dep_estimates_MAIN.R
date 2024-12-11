@@ -96,23 +96,48 @@ if (file.exists("Z:/Projects/ConnectToOracle.R")) {
 odbcGetInfo(channel)
 
 # Season-specific fixed inputs --------------------------------------------
-# UPDATE this section each year with the current cruise and vessels
+# May need to change the vessels and whether the NBS should be included, here.
+
 current_year <- year(Sys.Date())
-# current_year <- 2023  # choose a different year when debugging
-cruise <- paste0(current_year, "01", ",", current_year, "02")
-vessel_code <- paste0(162, "," , 134) #list each vessel, separated by commas
-vessel_nums <- c(162, 134)
+set_inputs <- function(vessel1 = 162, vessel2 = 134, include_NBS = FALSE) {
+  if(include_NBS == TRUE) {
+    cruise <- paste0(current_year, "01", ",", current_year, "02")
+  }
+  
+  if(include_NBS == FALSE) {
+    cruise <- paste0(current_year, "01")
+  }
 
-# get cruise id from here
-query_command <- paste0(" select * from race_data.v_cruises where cruise in (", cruise,");")
-cruise_info <- sqlQuery(channel, query_command) %>% 
-  as_tibble() %>% 
-  clean_names()
+  vessel_code <- paste0(vessel1, ",", vessel2)  # List each vessel, separated by commas
+  vessel_nums <- c(vessel1, vessel2)
+  
+  # get cruise id from here
+  query_command <- paste0(" select * from race_data.v_cruises where cruise in (", cruise,");")
+  cruise_info <- sqlQuery(channel, query_command) %>% 
+    as_tibble() %>% 
+    clean_names()
+  
+  cruise_id_nums <- cruise_info %>% filter(vessel_id %in% vessel_nums) 
+  
+  # create cruise ID object - when no NBS, avoid NAs from non-existent cruise
+  if(include_NBS == TRUE) {
+    cruise_id <- paste0(cruise_id_nums$cruise_id[1], "," , cruise_id_nums$cruise_id[2],
+                        "," , cruise_id_nums$cruise_id[3], "," , cruise_id_nums$cruise_id[4])
+  }
+  
+  if(include_NBS == FALSE) {
+    cruise_id <- paste0(cruise_id_nums$cruise_id[1], "," , cruise_id_nums$cruise_id[2])
+  }
+  
+  return(list(cruise = cruise, vessel_code = vessel_code, cruise_id = cruise_id))
+}
 
-cruise_id_nums <- cruise_info %>% dplyr::filter(vessel_id %in% vessel_nums) 
+inputs <- set_inputs()
 
-cruise_id <- paste0(cruise_id_nums$cruise_id[1], "," , cruise_id_nums$cruise_id[2],
-                    "," , cruise_id_nums$cruise_id[3], "," , cruise_id_nums$cruise_id[4])
+# Define inputs required below
+cruise <- inputs$cruise
+vessel_code <- inputs$vessel_code
+cruise_id <- inputs$cruise_id
 
 # NBS subarea stratum-- this shouldn't change too much, but is a fixed input
 NBS_subarea <- c(81, 70, 71, 99) # NBS stratum numbers; added 99 to indicate 2018 NBS emergency survey; diff survey methods
@@ -128,7 +153,7 @@ dir_thisyr <- paste0(current_year,"_", data_type, "_data_", strat_meta_year, "_s
 dir.create(here("output",dir_thisyr))
 
 # data --------------------------------------------------------------------
-process_data <- function(first_run = TRUE, estimate_ages = FALSE, save_data = TRUE) {
+process_data <- function(first_run = TRUE, estimate_ages = FALSE, save_data = FALSE) {
   # Don't include slope survey for VAST
   slope_survey <- slope_survey_d()
   
@@ -187,8 +212,7 @@ process_data <- function(first_run = TRUE, estimate_ages = FALSE, save_data = TR
   }
   
   # Separate EBS and NBS specimen data for design-based age comps
-  if(data_type == "db")
-  {
+  if(data_type == "db") {
     pollock_specimen_nbs <- specimen_data_d(hauls_survey_dat = hauls_survey_nbs)
     pollock_specimen_bad_nbs <- specimen_data_d(hauls_survey_dat = hauls_survey_bad_nbs)
     pollock_specimen_all_nbs <- pollock_specimen_nbs %>%
@@ -316,7 +340,7 @@ pollock_specimen <- tables$pollock_specimen
 pollock_catch <- tables$pollock_catch
 pollock_length <- tables$pollock_length
 all_strata <- tables$all_strata
-strata_metadata <- strata_metadata
+strata_metadata <- tables$strata_metadata
 ddc_table <- tables$ddc_table
 
 
