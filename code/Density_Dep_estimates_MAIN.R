@@ -153,7 +153,7 @@ dir_thisyr <- paste0(current_year,"_", data_type, "_data_", strat_meta_year, "_s
 dir.create(here("output",dir_thisyr))
 
 # data --------------------------------------------------------------------
-process_data <- function(first_run = TRUE, estimate_ages = FALSE, save_data = TRUE) {
+process_data <- function(first_run = FALSE, estimate_ages = FALSE, save_data = FALSE) {
   # Don't include slope survey for VAST
   slope_survey <- slope_survey_d()
   
@@ -317,8 +317,8 @@ process_data <- function(first_run = TRUE, estimate_ages = FALSE, save_data = TR
     rename(latitude = start_latitude, longitude = start_longitude) %>% 
     select(- latitude, -longitude, -species_code)
   
-  ## Return tables for next step ----------------------------------------------
-  return(list(slope_survey = slope_survey,
+  ## Return tables for next steps ---------------------------------------------
+  out <- list(slope_survey = slope_survey,
               hauls_survey = hauls_survey, 
               pollock_specimen = pollock_specimen,
               pollock_catch = pollock_catch,
@@ -329,7 +329,15 @@ process_data <- function(first_run = TRUE, estimate_ages = FALSE, save_data = TR
               cpue_length_table = cpue_length_table,
               age_comp_full_key = age_comp_full_key,
               ddc_table = ddc_table, 
-              cpue_info = cpue_info))
+              cpue_info = cpue_info)
+  
+  if(data_type == "mb") {return(out)}
+  
+  if(data_type == "db") {
+    extra <- list(hauls_survey_ebs = hauls_survey_ebs, hauls_survey_nbs = hauls_survey_nbs)
+    out2 <- c(out, extra)
+    return(out2)
+  }
 }
 
 tables <- process_data()
