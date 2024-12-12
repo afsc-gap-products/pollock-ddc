@@ -333,8 +333,14 @@ process_data <- function(first_run = FALSE, estimate_ages = FALSE, save_data = F
   
   if(data_type == "mb") {return(out)}
   
+  # Include additional tables generated in the design-based section
   if(data_type == "db") {
-    extra <- list(hauls_survey_ebs = hauls_survey_ebs, hauls_survey_nbs = hauls_survey_nbs)
+    extra <- list(hauls_survey_ebs = hauls_survey_ebs, 
+                  hauls_survey_nbs = hauls_survey_nbs,
+                  pollock_specimen_ebs = pollock_specimen_ebs,
+                  pollock_specimen_nbs = pollock_specimen_nbs,
+                  pollock_raw_length_ebs = pollock_raw_length_ebs,
+                  pollock_raw_length_nbs = pollock_raw_length_nbs)
     out2 <- c(out, extra)
     return(out2)
   }
@@ -402,7 +408,10 @@ ddc_conversion <- function() {
               ddc_pop_ests_EBS = ddc_pop_ests_EBS,
               ddc_pop_ests_NBS = ddc_pop_ests_NBS,
               ddc_cpue_length_table = ddc_cpue_length_table,
+              ddc_length_comps = ddc_length_comps,
+              ddc_cpue_length_table = ddc_cpue_length_table,
               ddc_al_key = ddc_al_key,
+              ddc_alk_all = ddc_alk_all,
               ddc_alk = ddc_alk))
 }
 
@@ -491,12 +500,12 @@ if(data_type == 'db') {
             here(output, paste0("length_comps_densdep_corrected", file_end)))
   
   # Calculate metrics of hauls, number of lengths, etc. per year
-  annual_metrics <- get_annual_metrics(hauls_ebs = hauls_survey_ebs, 
-                                       hauls_nbs = hauls_survey_nbs, 
-                                       length = pollock_raw_length_ebs,
-                                       length_nbs = pollock_raw_length_nbs,
-                                       spec = pollock_specimen_ebs,
-                                       spec_nbs = pollock_specimen_nbs,
+  annual_metrics <- get_annual_metrics(hauls_ebs = tables$hauls_survey_ebs, 
+                                       hauls_nbs = tables$hauls_survey_nbs, 
+                                       length = tables$pollock_raw_length_ebs,
+                                       length_nbs = tables$pollock_raw_length_nbs,
+                                       spec = tables$pollock_specimen_ebs,
+                                       spec_nbs = tables$pollock_specimen_nbs,
                                        this_yr = current_year, 
                                        nbs_subarea = NBS_subarea)
   
@@ -504,15 +513,15 @@ if(data_type == 'db') {
               here(output, paste0("info_hauls_peryr", file_end)))
   write_lines(annual_metrics$fish_measured,  # Number of fish measured (by year)
               here(output, paste0("info_n_fish_measured", file_end)))
-  write_lines(fish_aged,  # Number of fish aged (by year)
+  write_lines(annual_metrics$fish_aged,  # Number of fish aged (by year)
               here(output, paste0("info_n_fish_aged", file_end)))
   
   # Extra stuff
   write_csv(ddc_alk,  # Full DDC ALK
             here(output, paste0("age_length_key_full_densdep_corrected", file_end)))
-  write_csv(age_comp_full_key, 
+  write_csv(tables$age_comp_full_key, 
             here(output, paste0("age_length_key_full_uncorrected_", file_end)))
-  write_csv(ddc_al_key,  # DDC ALK summary
+  write_csv(ddc$ddc_al_key,  # DDC ALK summary
             here(output, paste0("age_length_key_SUMMARY_densdep_corrected", file_end)))
   
 }
@@ -522,16 +531,10 @@ if(data_type == 'db') {
 
 # ddc age comps by sex
 #Only run this when starting from scratch to create directory
-dir.create(here::here("output",'other_requests'), showWarnings = FALSE)
-write_csv(ddc_alk_all$ddc_age_sex, here("output", "other_requests", paste0("age_length_key_full_with_sex_densdep_corrected", current_year, ".csv")))
-# drive_upload(ddc_alk_all$ddc_age_sex, 
-#              path = (as_id("1FXW5eaQh28ZnmY83mJHCWnWRmSJR9lGL")), 
-#              name = paste0("age_length_key_full_with_sex_densdep_corrected", current_year, ".csv"))
-# 
-# ddc_alk_all$ddc_age_sex %>% 
-#   drive_upload(path = (as_id("1FXW5eaQh28ZnmY83mJHCWnWRmSJR9lGL")),
-#                name = paste0("age_length_key_full_with_sex_densdep_corrected", current_year, ".csv"))
-
+dir.create(here("output",'other_requests'), showWarnings = FALSE)
+write_csv(ddc$ddc_alk_all$ddc_age_sex, 
+          here("output", "other_requests", 
+               paste0("age_length_key_full_with_sex_densdep_corrected", current_year, ".csv")))
 
 # length comps with haul joins
 # ddc_cpue_length_table_Ivonne <- full_join(ddc_length_comps$sizecomp_cpue_stn, hauls_survey) %>%  #, by = c("vessel", "year", "haul"))
@@ -546,14 +549,16 @@ write_csv(ddc_alk_all$ddc_age_sex, here("output", "other_requests", paste0("age_
 # write_csv(ddc_table_clean, here("output", "other requests", paste0("index_year_stn_FEAST", current_year, ".csv")))
 
 # Biomass-by-length by subarea (for Ivonne) - SNW 2024-04-02
-ddc_biom_by_length <- left_join(ddc_length_comps$pollock_length_comp_biomass, ddc_length_comps$stratum_use) %>%
+ddc_biom_by_length <- left_join(ddc$ddc_length_comps$pollock_length_comp_biomass, ddc$ddc_length_comps$stratum_use) %>%
   filter(!is.na(cpue_prop)) %>%
   mutate(biomass_kg = biomass_kg_ha * cpue_prop) %>%
   select("year", "stratum", "sex", "length", "biomass_kg")
 ddc_biom_by_length <- ddc_biom_by_length[, -1]
-write_csv(ddc_biom_by_length, here("output", "other_requests", paste0("biomass_by_length_stratum", current_year, ".csv")))
+write_csv(ddc_biom_by_length, 
+          here("output", "other_requests", 
+               paste0("biomass_by_length_stratum", current_year, ".csv")))
 
 # total numbers by year, station, and 1 cm length bin
-ddc_cpue_length_table %<>%
+ddc_cpue_length_table <- ddc$ddc_cpue_length_table %<>%
   rename(ddc_cpue_length_num_ha = cpue_length_num_ha)
 write_csv(ddc_cpue_length_table, here("output", "other_requests", paste0("length_numbers_year_stn_FEAST", current_year, ".csv")))
