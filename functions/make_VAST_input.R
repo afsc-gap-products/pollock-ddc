@@ -8,7 +8,8 @@
 make_VAST_input <- function(hauls = hauls_survey,
                             spec = pollock_specimen,
                             ddc_index = ddc_table,
-                            ddc_age = ddc_alk)
+                            ddc_age = ddc_alk,
+                            slope_survey = slope_survey)
 {
   # add in 2018 NBS emergency survey (read_csv)
   # ddc_table_2018 <- read_csv(here("output", "VAST_ddc_2018_NBS_addon.csv")) %>% 
