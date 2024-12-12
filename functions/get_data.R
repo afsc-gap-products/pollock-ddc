@@ -170,8 +170,8 @@ specimen_data_d <- function(hauls_survey_dat) {
                               a.SPECIMENID, a.BIOSTRATUM, a.SPECIES_CODE, round(a.LENGTH/10)*10 length, a.SEX, a.WEIGHT,
                               a.AGE, a.MATURITY, a.MATURITY_TABLE, a.GONAD_WT, a.AUDITJOIN
                             from racebase.specimen a
-                            where species_code = 21740 and a.age is not null
-                            order by cruise, vessel, haul;")
+                            where species_code = 21740", if(estimate_ages == TRUE) {" and a.age is not null"},
+                            " order by cruise, vessel, haul;")
   
   pollock_specimen_orig <- sqlQuery(channel, query_command) %>% 
     as_tibble() %>% 

@@ -146,14 +146,17 @@ NBS_subarea <- c(81, 70, 71, 99) # NBS stratum numbers; added 99 to indicate 201
 strat_meta_year <- 2022
 
 # Set output - model- or design-based
-data_type <- "db"
+data_type <- "mb"
+
+# Estimate ages from the age-length key (when there are no ages before the production run)
+estimate_ages <- TRUE
 
 # Set up folder 
 dir_thisyr <- paste0(current_year,"_", data_type, "_data_", strat_meta_year, "_strata")
 dir.create(here("output",dir_thisyr))
 
 # data --------------------------------------------------------------------
-process_data <- function(first_run = FALSE, estimate_ages = FALSE, save_data = FALSE) {
+process_data <- function(first_run = FALSE, save_data = FALSE) {
   # Don't include slope survey for VAST
   slope_survey <- slope_survey_d()
   
