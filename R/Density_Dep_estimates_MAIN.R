@@ -98,7 +98,8 @@ odbcGetInfo(channel)
 # Season-specific fixed inputs --------------------------------------------
 # May need to change the vessels and whether the NBS should be included, here.
 
-current_year <- year(Sys.Date())
+# current_year <- year(Sys.Date())
+current_year <- 2024  # for debugging
 set_inputs <- function(vessel1 = 162, vessel2 = 134, include_NBS = FALSE) {
   if(include_NBS == TRUE) {
     cruise <- paste0(current_year, "01", ",", current_year, "02")
@@ -152,7 +153,7 @@ data_type <- "mb"
 estimate_ages <- TRUE
 
 # Set up folder 
-dir_thisyr <- paste0(current_year,"_", data_type, "_data_", strat_meta_year, "_strata")
+dir_thisyr <- paste0(current_year, "_", data_type, "_data_", strat_meta_year, "_strata")
 dir.create(here("output",dir_thisyr))
 
 # data --------------------------------------------------------------------
