@@ -97,10 +97,8 @@ odbcGetInfo(channel)
 
 # Season-specific fixed inputs --------------------------------------------
 # May need to change the vessels and whether the NBS should be included, here.
-
-# current_year <- year(Sys.Date())
-current_year <- 2024  # for debugging
-set_inputs <- function(vessel1 = 162, vessel2 = 134, include_NBS = FALSE) {
+current_year <- year(Sys.Date())
+set_inputs <- function(vessel1 = 162, vessel2 = 134, include_NBS = TRUE) {
   if(include_NBS == TRUE) {
     cruise <- paste0(current_year, "01", ",", current_year, "02")
   }
@@ -144,13 +142,14 @@ cruise_id <- inputs$cruise_id
 NBS_subarea <- c(81, 70, 71, 99) # NBS stratum numbers; added 99 to indicate 2018 NBS emergency survey; diff survey methods
 
 # Strata metadata year; 2022 is the latest update (use for current assessments)
-strat_meta_year <- 2022
+# Special 2025 design year for partial NBS survey
+strat_meta_year <- 2025
 
 # Set output - model- or design-based
 data_type <- "mb"
 
 # Estimate ages from the age-length key (when there are no ages before the production run)
-estimate_ages <- TRUE
+estimate_ages <- FALSE
 
 # Set up folder 
 dir_thisyr <- paste0(current_year, "_", data_type, "_data_", strat_meta_year, "_strata")

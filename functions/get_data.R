@@ -273,10 +273,16 @@ metadata_d <- function(cruise_id = cruise, vessel_code_id = vessel_code, pollock
     dplyr::filter(stratum < 100) %>% #100-160 not part of normal survey grid area
     mutate(subarea = if_else(stratum %in% NBS_subarea, 0, as.numeric(sub('^(.).*(.)$', '\\1', stratum))))
   
+  strata_metadata_2025 <- strata_metadata_raw %>% # 2022 update
+    dplyr::filter(year == 2025)  %>% 
+    dplyr::filter(stratum < 100) %>% #100-160 not part of normal survey grid area
+    mutate(subarea = if_else(stratum %in% NBS_subarea, 0, as.numeric(sub('^(.).*(.)$', '\\1', stratum))))
+  
   if(meta_select == 2010) {strata_metadata <- strata_metadata_2010
   } else if(meta_select == 2019) {strata_metadata <- strata_metadata_2019
   } else if(meta_select == 2022) {strata_metadata <- strata_metadata_2022
-  } else(print("Invalid selection: please select strata from 2010, 2019, or 2022"))
+  } else if(meta_select == 2025) {strata_metadata <- strata_metadata_2025
+  } else(print("Invalid selection: please select strata from 2010, 2019, 2022, or 2025"))
   
   return(strata_metadata)
   
