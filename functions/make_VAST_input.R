@@ -135,3 +135,80 @@ make_VAST_input <- function(hauls = hauls_survey,
               VAST_ddc_alk = VAST_ddc_alk,
               encounter_rate = encounter_100))
 }
+
+# New function for when in-season ages are not available
+make_VAST_input_noage <- function(hauls = hauls_survey,
+                                  spec = pollock_specimen,
+                                  ddc_index = ddc_table,
+                                  slope_survey = slope_survey)
+{
+  # add in 2018 NBS emergency survey (read_csv)
+  # ddc_table_2018 <- read_csv(here("output", "VAST_ddc_2018_NBS_addon.csv")) %>% 
+  #   dplyr::select(year, stratum, start_latitude, start_longitude, ddc_cpue_kg_ha, hauljoin, cruisejoin) %>% 
+  #   drop_na(year, start_latitude, start_longitude) 
+  # 
+  # agecomp_2018 <- read_csv(here("output", "VAST_ddc_alk_2018_NBS_addon.csv")) %>% 
+  #   dplyr::select(year, cruisejoin, haul, age, cpue_age_num, prop_check, 
+  #                 mean_length, count_n, ddc_cpue_num_ha, cpue_num_ha, correction, age_cpue_corr, )
+  # 
+  # all stations- add in 0s
+  all_stns_surveyed <- hauls %>% 
+    # bind_rows(hauls_survey_18) %>% # add 2018 hauls
+    dplyr::select(year, cruisejoin, hauljoin, start_latitude, start_longitude, stratum) %>% 
+    distinct()
+  
+  # check this is all unique stations (tibble should be 0)
+  # all_stns_surveyed %>% group_by(year, cruisejoin, hauljoin) %>% 
+  #   summarise(n = n()) %>% 
+  #   dplyr::filter(n>1)
+  
+  # catch (cpue, kg/ha), year, lat, long
+  VAST_ddc_table <- ddc_index %>% 
+    ungroup %>% 
+    dplyr::select(year, stratum, start_latitude, start_longitude, ddc_cpue_kg_ha, hauljoin, cruisejoin) %>% 
+    drop_na(year, start_latitude, start_longitude) %>% 
+    # bind_rows(ddc_table_2018) %>% # bind 2018 rows
+    arrange(year) %>% 
+    full_join(all_stns_surveyed) %>% 
+    mutate(ddc_cpue_kg_ha = if_else(is.na(ddc_cpue_kg_ha), 0, ddc_cpue_kg_ha)) %>% 
+    arrange(year) #%>% 
+  # dplyr::select(-hauljoin)
+  
+  VAST_ddc_table_EBS <- VAST_ddc_table %>% 
+    filter(!stratum %in% NBS_subarea)  #Not NBS
+  
+  VAST_ddc_table_NBS<- VAST_ddc_table %>% 
+    filter(stratum %in% NBS_subarea) #just NBS
+  
+  # check for years with 100% encounter rate
+  all_years_surveyed <- hauls %>% distinct(year)
+  enc_rate <- full_join(hauls, spec, by = "hauljoin") %>% 
+    dplyr::filter(is.na(cruisejoin.y)) %>% 
+    distinct(year.x) %>% 
+    rename(year = year.x) %>% 
+    anti_join(all_years_surveyed)
+  
+  if(dim(enc_rate)[1]==0)
+  {
+    # print("no years with 100% encounter rate")
+    encounter_100 <- FALSE
+  }else
+  {
+    # print("there are years with 100% encounter rate")
+    encounter_100 <- TRUE
+  }
+  
+  # do age comps
+  all_stns_surveyed <- hauls %>% 
+    # bind_rows(hauls_survey_18) %>% # add 2018 hauls
+    dplyr::select(year, cruisejoin, hauljoin, start_latitude, start_longitude) %>% 
+    distinct()
+  # check:
+  # filter(all_stns_surveyed, !hauljoin %in% all_hauljoins)
+  
+  # VAST_ddc_alk_prelim %>% dplyr::filter(is.na(hauljoin))
+  return(list(VAST_ddc_table = VAST_ddc_table,
+              VAST_ddc_table_EBS = VAST_ddc_table_EBS,
+              VAST_ddc_table_NBS = VAST_ddc_table_NBS,
+              encounter_rate = encounter_100))
+}
