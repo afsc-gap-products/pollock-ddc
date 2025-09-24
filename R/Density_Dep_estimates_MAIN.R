@@ -74,8 +74,8 @@ library(mgcv)
 # library(modelr)
 # library(googledrive)
 
-functions <- list.files(here("functions"))
-walk(functions, ~ source(here("functions", .x)))
+functions <- list.files(here("R", "functions"))
+walk(functions, ~ source(here("R", "functions", .x)))
 
 # Connect to database -----------------------------------------------------
 # Connection established either through saved username and password, or by entering directly
@@ -97,6 +97,7 @@ odbcGetInfo(channel)
 
 # Season-specific fixed inputs --------------------------------------------
 # May need to change the vessels and whether the NBS should be included, here.
+
 current_year <- year(Sys.Date())
 set_inputs <- function(vessel1 = 162, vessel2 = 134, include_NBS = TRUE) {
   if(include_NBS == TRUE) {
@@ -106,7 +107,7 @@ set_inputs <- function(vessel1 = 162, vessel2 = 134, include_NBS = TRUE) {
   if(include_NBS == FALSE) {
     cruise <- paste0(current_year, "01")
   }
-
+  
   vessel_code <- paste0(vessel1, ",", vessel2)  # List each vessel, separated by commas
   vessel_nums <- c(vessel1, vessel2)
   
@@ -142,17 +143,16 @@ cruise_id <- inputs$cruise_id
 NBS_subarea <- c(81, 70, 71, 99) # NBS stratum numbers; added 99 to indicate 2018 NBS emergency survey; diff survey methods
 
 # Strata metadata year; 2022 is the latest update (use for current assessments)
-# Special 2025 design year for partial NBS survey
 strat_meta_year <- 2025
 
 # Set output - model- or design-based
 data_type <- "mb"
 
 # Estimate ages from the age-length key (when there are no ages before the production run)
-estimate_ages <- FALSE
+estimate_ages <- TRUE
 
 # Set up folder 
-dir_thisyr <- paste0(current_year, "_", data_type, "_data_", strat_meta_year, "_strata")
+dir_thisyr <- paste0(current_year,"_", data_type, "_data_", strat_meta_year, "_strata")
 dir.create(here("output",dir_thisyr))
 
 # data --------------------------------------------------------------------
@@ -256,7 +256,7 @@ process_data <- function(first_run = FALSE, save_data = FALSE) {
                                    pollock_length = pollock_length,
                                    # ebs_shelf_cruise = ebs_shelf_cruise, 
                                    metadata = strata_metadata) #, 
-                                   # strata_metadata_raw = strata_metadata_raw)
+    # strata_metadata_raw = strata_metadata_raw)
   }
   
   ## Data Processing ----------------------------------------------------------
@@ -440,8 +440,7 @@ db_bootstrap <- bootstrapping()
 # Repeated file path pieces
 output <- here("output", dir_thisyr)
 file_end <- paste0("_", current_year, ".csv")
-
-if(data_type == 'mb') {
+if(estimate_ages == TRUE) {
   VAST_files <- make_VAST_input(hauls = hauls_survey,
                                 spec = pollock_specimen,
                                 ddc_index = ddc_table,
@@ -465,6 +464,24 @@ if(data_type == 'mb') {
             here(output, paste0("VAST_ddc_NBSonly", file_end)))
   write_csv(VAST_ddc_alk,  # Age comps for EBS + NBS together - dd correction
             here(output, paste0("VAST_ddc_alk", file_end)))
+}
+
+if(estimate_ages == FALSE) {
+  VAST_files <- make_VAST_input_noage(hauls = hauls_survey,
+                                      spec = pollock_specimen,
+                                      ddc_index = ddc_table,
+                                      slope_survey = tables$slope_survey)
+  
+  if(VAST_files$encounter_rate == FALSE) {print("no years with 100% encounter rate")
+  }else{print("there are years with 100% encounter rate")}
+  
+  ## Write out tables for VAST ------------------------------------------------
+  write_csv(VAST_files$VAST_ddc_table,  # Biomass for EBS + NBS together - dd correction 
+            here(output, paste0("VAST_ddc_all", file_end)))
+  write_csv(VAST_files$VAST_ddc_table_EBS,  # Biomass for just EBS - dd correction
+            here(output, paste0("VAST_ddc_EBSonly", file_end)))
+  write_csv(VAST_files$VAST_ddc_table_NBS,  # Biomass for just NBS - dd correction
+            here(output, paste0("VAST_ddc_NBSonly", file_end)))
 }
 
 
