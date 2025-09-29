@@ -148,6 +148,9 @@ strat_meta_year <- 2025
 # Set output - model- or design-based
 data_type <- "mb"
 
+# Is this the first run of a new production year?
+first <- TRUE
+
 # Estimate ages from the age-length key (when there are no ages before the production run)
 estimate_ages <- TRUE
 
@@ -156,7 +159,7 @@ dir_thisyr <- paste0(current_year,"_", data_type, "_data_", strat_meta_year, "_s
 dir.create(here("output",dir_thisyr))
 
 # data --------------------------------------------------------------------
-process_data <- function(first_run = FALSE, save_data = FALSE) {
+process_data <- function(first_run = first, save_data = TRUE) {
   # Don't include slope survey for VAST
   slope_survey <- slope_survey_d()
   
@@ -399,7 +402,7 @@ ddc_conversion <- function() {
   ddc_al_key <- get_al_key(pollock_specimen, ddc_length_comps$pollock_length_comp)
   
   # DDC numbers-at-age by year and station ------------------------------------
-  # This step takes a long time!
+  ####### This step takes a long time! #######
   ddc_alk_all <- ddc_age_comps_f(ddc_table,
                                  tables$age_comp_full_key,  # CIA: Stan uses UNCORRECTED AAL key
                                  tables$cpue_length_table)  # CIA: Stan uses UNCORRECTED CPUE number at length
