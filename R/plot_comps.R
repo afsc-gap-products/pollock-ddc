@@ -4,6 +4,9 @@ library(ggplot2)
 library(here)
 library(dplyr)
 
+if (!requireNamespace("ggsidekick", quietly = TRUE)) {
+  devtools::install_github("seananderson/ggsidekick")
+}
 library(ggsidekick)
 theme_set(theme_sleek())
 
