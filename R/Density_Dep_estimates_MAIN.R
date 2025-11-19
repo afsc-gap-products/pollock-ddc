@@ -143,7 +143,7 @@ cruise_id <- inputs$cruise_id
 NBS_subarea <- c(81, 70, 71, 99) # NBS stratum numbers; added 99 to indicate 2018 NBS emergency survey; diff survey methods
 
 # Strata metadata year; 2022 is the latest update (use for current assessments)
-strat_meta_year <- 2025
+strat_meta_year <- 2022
 
 # Set output - model- or design-based
 data_type <- "mb"
