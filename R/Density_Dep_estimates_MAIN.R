@@ -149,10 +149,10 @@ strat_meta_year <- 2022
 data_type <- "mb"
 
 # Is this the first run of a new production year?
-first <- TRUE
+first <- FALSE
 
 # Estimate ages from the age-length key (when there are no ages before the production run)
-estimate_ages <- TRUE
+estimate_ages <- FALSE
 
 # Set up folder 
 dir_thisyr <- paste0(current_year,"_", data_type, "_data_", strat_meta_year, "_strata")
