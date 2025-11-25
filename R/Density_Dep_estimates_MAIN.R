@@ -154,9 +154,10 @@ first <- FALSE
 # Estimate ages from the age-length key (when there are no ages before the production run)
 estimate_ages <- FALSE
 
-# Set up folder 
-dir_thisyr <- paste0(current_year,"_", data_type, "_data_", strat_meta_year, "_strata")
-dir.create(here("output",dir_thisyr))
+# Set up folders for data and results
+dir_label <- paste0(today(),"_", data_type)
+if (!dir.exists(here("data", dir_label))) dir.create(here("data", dir_label))
+if (!dir.exists(here("output", dir_label))) dir.create(here("output", dir_label))
 
 # data --------------------------------------------------------------------
 process_data <- function(first_run = first, save_data = TRUE) {
@@ -441,7 +442,7 @@ db_bootstrap <- bootstrapping()
 
 # Check and save model-based results (for VAST) -------------------------------
 # Repeated file path pieces
-output <- here("output", dir_thisyr)
+output <- here("output", dir_label)
 file_end <- paste0("_", current_year, ".csv")
 if(estimate_ages == TRUE) {
   VAST_files <- make_VAST_input(hauls = hauls_survey,
@@ -554,7 +555,7 @@ if(data_type == 'db') {
 
 # ddc age comps by sex
 #Only run this when starting from scratch to create directory
-dir.create(here("output",'other_requests'), showWarnings = FALSE)
+if (!dir.exists(here("output", "other_requests"))) dir.create(here("output", "other_requests"))
 write_csv(ddc$ddc_alk_all$ddc_age_sex, 
           here("output", "other_requests", 
                paste0("age_length_key_full_with_sex_densdep_corrected", current_year, ".csv")))
