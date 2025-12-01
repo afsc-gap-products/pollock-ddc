@@ -16,6 +16,6 @@ save_raw_data <- function(...)
   length(dots)
   for(i in 1:length(dots))
   {
-    write.csv(dots[[i]], here("data", dir_label, paste0(dots_names[i], ".csv")))
+    write.csv(dots[[i]], here("data", dir_label, paste0("raw_", dots_names[i], ".csv")))
   }
 }
