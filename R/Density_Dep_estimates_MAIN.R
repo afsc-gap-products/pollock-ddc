@@ -544,7 +544,7 @@ if(data_type == 'db') {
   write_csv(ddc_alk,  # Full DDC ALK
             here(output, paste0("age_length_key_full_densdep_corrected", file_end)))
   write_csv(tables$age_comp_full_key, 
-            here(output, paste0("age_length_key_full_uncorrected_", file_end)))
+            here(output, paste0("age_length_key_full_uncorrected", file_end)))
   write_csv(ddc$ddc_al_key,  # DDC ALK summary
             here(output, paste0("age_length_key_SUMMARY_densdep_corrected", file_end)))
   
