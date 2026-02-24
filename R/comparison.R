@@ -115,3 +115,25 @@ ggplot(cpue_sf) +
   theme(legend.position = "bottom") +
   labs(color = "log(CPUE (kg/km2))") +
   facet_grid(data ~ Year)
+
+# Plot difference between them ------------------------------------------------
+diff_cpue <- inner_join(ddc_cpue, ebs_cpue, join_by(Lat == Lat, Lon == Lon, Year == Year)) %>%
+  group_by(Lat, Lon, Year) %>%
+  summarize(CPUE = (CPUE.x - CPUE.y) / CPUE.y) %>%
+  filter(Year >= 2021) 
+diff_cpue <- st_as_sf(diff_cpue, coords = c("Lon", "Lat"), crs = 4326)
+
+ggplot(diff_cpue) +
+  geom_sf(data = world) +
+  geom_sf(data = diff_cpue, aes(color = CPUE), shape = "square") +
+  scale_color_viridis(na.value = NA, 
+                      limits = c(0, NA),
+                      guide = guide_colourbar(title.position = "bottom", 
+                                              title.hjust = 0.5)) +
+  coord_sf(xlim = c(-180, -157), ylim = c(53.8, 63.2), expand = FALSE) +
+  theme(axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank()) +
+  theme(legend.position = "bottom") +
+  labs(color = "Relative difference in CPUE") +
+  facet_wrap(~ Year)
