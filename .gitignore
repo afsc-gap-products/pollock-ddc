@@ -6,7 +6,8 @@ renv/
 renv.*
 .DS_Store  
 
-# Ignore data folder
+# Ignore data folder and plots
 data/
 output/
 *.Rdata
+*.png
