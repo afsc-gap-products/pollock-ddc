@@ -62,7 +62,7 @@
 #      - Age compositions for EBS + NBS together - dd correction
 
 
-# Dependencies ------------------------------------------------------------
+# Dependencies ----------------------------------------------------------------
 library(here)
 library(tidyverse)
 library(RODBC)
@@ -77,7 +77,7 @@ library(mgcv)
 functions <- list.files(here("R", "functions"))
 walk(functions, ~ source(here("R", "functions", .x)))
 
-# Connect to database -----------------------------------------------------
+# Connect to database ---------------------------------------------------------
 # Connection established either through saved username and password, or by entering directly
 # make sure you are connected to VPN first (and have an AFSC Oracle login)
 if (file.exists("Z:/Projects/ConnectToOracle.R")) {
@@ -95,11 +95,29 @@ if (file.exists("Z:/Projects/ConnectToOracle.R")) {
 ## checks to see if connection has been established
 odbcGetInfo(channel)
 
-# Season-specific fixed inputs --------------------------------------------
-# May need to change the vessels and whether the NBS should be included, here.
-
+###################################################
+##### BASIC INPUT - CHECK THIS BEFORE RUNNING #####
+###################################################
 current_year <- year(Sys.Date())
-set_inputs <- function(vessel1 = 162, vessel2 = 134, include_NBS = TRUE) {
+
+# whether there was an NBS survey this year
+nbs <- FALSE 
+
+# Strata metadata year; 2022 is the latest update (use for current assessments)
+strat_meta_year <- 2022
+
+# Set output - model- or design-based
+data_type <- "db"
+
+# Is this the first run of a new production year?
+first <- TRUE
+
+# Estimate ages from the age-length key (when there are no ages before the production run)
+estimate_ages <- TRUE
+
+# Season-specific fixed inputs ------------------------------------------------
+# May need to change the vessels and whether the NBS should be included, here.
+set_inputs <- function(vessel1 = 162, vessel2 = 134, include_NBS = nbs) {
   if(include_NBS == TRUE) {
     cruise <- paste0(current_year, "01", ",", current_year, "02")
   }
@@ -138,21 +156,10 @@ inputs <- set_inputs()
 cruise <- inputs$cruise
 vessel_code <- inputs$vessel_code
 cruise_id <- inputs$cruise_id
+message(cruise_id)  # double check that there are no NAs here. If there are, likely need nbs = FALSE
 
 # NBS subarea stratum-- this shouldn't change too much, but is a fixed input
 NBS_subarea <- c(81, 70, 71, 99) # NBS stratum numbers; added 99 to indicate 2018 NBS emergency survey; diff survey methods
-
-# Strata metadata year; 2022 is the latest update (use for current assessments)
-strat_meta_year <- 2022
-
-# Set output - model- or design-based
-data_type <- "mb"
-
-# Is this the first run of a new production year?
-first <- FALSE
-
-# Estimate ages from the age-length key (when there are no ages before the production run)
-estimate_ages <- FALSE
 
 # Set up folders for data and results
 dir_label <- paste0(today(),"_", data_type)
