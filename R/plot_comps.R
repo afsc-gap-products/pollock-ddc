@@ -1,24 +1,24 @@
-# Plotting output from density-dependent correction
+# Plotting output from density-dependent correction for age comps
 
 library(ggplot2)
 library(here)
 library(dplyr)
 
 if (!requireNamespace("ggsidekick", quietly = TRUE)) {
-  devtools::install_github("seananderson/ggsidekick")
+  pak::pkg_install("seananderson/ggsidekick")
 }
 library(ggsidekick)
 theme_set(theme_sleek())
 
-# current_year <- as.numeric(format(Sys.Date(), "%Y"))
-current_year <- 2025
+current_year <- as.numeric(format(Sys.Date(), "%Y"))
+# current_year <- 2025
 # Strata metadata year; 2022 is the latest update (use for current assessments)
 strat_meta_year <- 2022
 # Set output - model- or design-based
 data_type <- "db"
 
 alk_summary <- read.csv(here("output", 
-                             paste0(current_year,"_", data_type, "_data_", strat_meta_year, "_strata"),
+                             "2026-09-01_db",
                              paste0("age_length_key_SUMMARY_densdep_corrected_", current_year, ".csv")))
 
 alk <- na.omit(alk_summary) %>%

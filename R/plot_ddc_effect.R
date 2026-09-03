@@ -12,13 +12,13 @@ library(sf)
 library(rnaturalearth)
 
 if (!requireNamespace("gapindex", quietly = TRUE)) {
-  install_github("afsc-gap-products/gapindex", build_vignettes = TRUE)
+  pak::pkg_install("afsc-gap-products/gapindex", build_vignettes = TRUE)
 }
 library(gapindex)
 
 # Set ggplot theme
 if (!requireNamespace("ggsidekick", quietly = TRUE)) {
-  devtools::install_github("seananderson/ggsidekick")
+  pak::pkg_install("seananderson/ggsidekick")
 }
 library(ggsidekick)
 theme_set(theme_sleek())
