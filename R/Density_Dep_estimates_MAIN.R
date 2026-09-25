@@ -100,7 +100,7 @@ odbcGetInfo(channel)
 ###################################################
 current_year <- year(Sys.Date())
 
-# whether there was an NBS survey this year
+# Was there was an NBS survey this year? Yes = TRUE, No = FALSE
 nbs <- FALSE 
 
 # Strata metadata year; 2022 is the latest update (use for current assessments)
@@ -110,10 +110,10 @@ strat_meta_year <- 2022
 data_type <- "db"
 
 # Is this the first run of a new production year?
-first <- TRUE
+first <- FALSE
 
 # Estimate ages from the age-length key (when there are no ages before the production run)
-estimate_ages <- TRUE
+estimate_ages <- FALSE
 
 # Season-specific fixed inputs ------------------------------------------------
 # May need to change the vessels and whether the NBS should be included, here.
