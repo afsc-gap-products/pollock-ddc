@@ -22,7 +22,7 @@ drive_folder <- as_id("1SATlJzi3XjDyq4YBLznP7plc5OXs8BSA")
 
 # List local files in the results directory 
 # DOUBLE-CHECK THAT THIS IS THE RIGHT DIRECTORY
-results_files <- list.files(here("output", "2026-09-01_db"), full.names = TRUE)
+results_files <- list.files(here("output", "2026-09-25_db"), full.names = TRUE)
 
 # Upload all files to google drive
 walk(results_files, ~ drive_upload(

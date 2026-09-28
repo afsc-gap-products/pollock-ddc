@@ -371,6 +371,10 @@ all_strata <- tables$all_strata
 strata_metadata <- tables$strata_metadata
 ddc_table <- tables$ddc_table
 
+# Table of year, location, temp (new request in 2026)
+temperature <- hauls_survey %>% 
+  select(year, start_latitude, start_longitude, gear_temperature, hauljoin, cruisejoin) 
+write.csv(temperature, here("output", dir_label, "temperature.csv"), row.names = FALSE)
 
 # Density-dependent correction ------------------------------------------------
 ddc_conversion <- function() {
