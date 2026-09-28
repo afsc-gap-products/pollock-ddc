@@ -455,7 +455,7 @@ db_bootstrap <- bootstrapping()
 # Repeated file path pieces
 output <- here("output", dir_label)
 file_end <- paste0("_", current_year, ".csv")
-if(estimate_ages == TRUE) {
+if(estimate_ages == FALSE) {
   VAST_files <- make_VAST_input(hauls = hauls_survey,
                                 spec = pollock_specimen,
                                 ddc_index = ddc_table,
@@ -481,7 +481,7 @@ if(estimate_ages == TRUE) {
             here(output, paste0("VAST_ddc_alk", file_end)))
 }
 
-if(estimate_ages == FALSE) {
+if(estimate_ages == TRUE) {
   VAST_files <- make_VAST_input_noage(hauls = hauls_survey,
                                       spec = pollock_specimen,
                                       ddc_index = ddc_table,
