@@ -5,6 +5,7 @@
 renv/
 renv.*
 .DS_Store  
+.positai
 
 # Ignore data folder and plots
 data/
