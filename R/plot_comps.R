@@ -38,7 +38,7 @@ ggplot(alk, aes(x = age, y = proportion)) +
 
 # Compare ALK files for model-based comps -------------------------------------
 old_alk <- read.csv(here("output", "archive", "2024_mb_data_2022_strata", "VAST_ddc_alk_2024.csv"))
-new_alk <- read.csv(here("output", "2026-03-02_mb", "VAST_ddc_alk_2026.csv")) 
+new_alk <- read.csv(here("output", "2026-10-05_mb", "VAST_ddc_alk_2026.csv")) 
 
 # Check if new ages have been added
 old_counts <- old_alk %>%
@@ -81,3 +81,21 @@ ggplot(compare_alk, aes(x = Age, y = comp, fill = sign)) +
 
 ggsave(filename = here("figures", "alk_diff.png"),
        width=200, height=200, units="mm", dpi=300)
+
+# Compare specimen tables
+old_specimen <- read.csv(here("data", "raw_data_pollock_specimen_2025-11-24.csv"))
+# old_specimen <- read.csv(here("data", "2026-10-05_mb",  "raw_pollock_specimen.csv")) 
+new_specimen <- read.csv(here("data", "2026-10-05_mb",  "raw_pollock_specimen.csv")) %>% 
+  filter(year %in% old_specimen$year)
+
+identical(old_specimen, new_specimen)
+
+all.equal(old_specimen, new_specimen)
+
+test1 <- old_specimen %>%
+  filter(year %in% c(2024, 2025)) %>%
+  filter(is.na(age)) 
+
+test2 <- new_specimen %>%
+  filter(year %in% c(2024, 2025)) %>%
+  filter(is.na(age))
