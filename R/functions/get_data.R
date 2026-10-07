@@ -168,9 +168,9 @@ specimen_data_d <- function(hauls_survey_dat) {
   # SNW: remove "and a.age is not null" to create estimated ALK for current year
   query_command <- paste0("select a.CRUISEJOIN, a.HAULJOIN, a.REGION, a.VESSEL, a.CRUISE, a.HAUL,
                               a.SPECIMENID, a.BIOSTRATUM, a.SPECIES_CODE, round(a.LENGTH/10)*10 length, a.SEX, a.WEIGHT,
-                              a.AGE, a.MATURITY, a.MATURITY_TABLE, a.GONAD_WT, a.AUDITJOIN
+                              a.AGE, a.MATURITY, a.MATURITY_TABLE, a.GONAD_WT, a.AGE_DETERMINATION_METHOD, a.AUDITJOIN
                             from racebase.specimen a
-                            where species_code = 21740", if(estimate_ages == TRUE) {" and a.age is not null"},
+                            where species_code = 21740", if(estimate_ages == FALSE) {" and a.age is not null"},
                             " order by cruise, vessel, haul;")
   
   pollock_specimen_orig <- sqlQuery(channel, query_command) %>% 

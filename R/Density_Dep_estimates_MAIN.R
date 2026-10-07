@@ -107,12 +107,14 @@ nbs <- FALSE
 strat_meta_year <- 2022
 
 # Set output - model- or design-based
-data_type <- "db"
+data_type <- "mb"
 
 # Is this the first run of a new production year?
 first <- FALSE
 
 # Estimate ages from the age-length key (when there are no ages before the production run)
+# Set == TRUE if you need to estimate ages for the current year, 
+# if you are running this in the fall before ages have been released.
 estimate_ages <- FALSE
 
 # Season-specific fixed inputs ------------------------------------------------
@@ -453,6 +455,7 @@ db_bootstrap <- bootstrapping()
 
 # Check and save model-based results (for VAST) -------------------------------
 # Repeated file path pieces
+# TODO: fix file creation and saving
 output <- here("output", dir_label)
 file_end <- paste0("_", current_year, ".csv")
 if(estimate_ages == FALSE) {
@@ -497,6 +500,8 @@ if(estimate_ages == TRUE) {
             here(output, paste0("VAST_ddc_EBSonly", file_end)))
   write_csv(VAST_files$VAST_ddc_table_NBS,  # Biomass for just NBS - dd correction
             here(output, paste0("VAST_ddc_NBSonly", file_end)))
+  write_csv(VAST_ddc_alk,  # Age comps for EBS + NBS together - dd correction
+            here(output, paste0("VAST_ddc_alk", file_end)))
 }
 
 
