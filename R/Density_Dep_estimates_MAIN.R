@@ -455,55 +455,56 @@ db_bootstrap <- bootstrapping()
 
 # Check and save model-based results (for VAST) -------------------------------
 # Repeated file path pieces
-# TODO: fix file creation and saving
 output <- here("output", dir_label)
 file_end <- paste0("_", current_year, ".csv")
-if(estimate_ages == FALSE) {
-  VAST_files <- make_VAST_input(hauls = hauls_survey,
-                                spec = pollock_specimen,
-                                ddc_index = ddc_table,
-                                ddc_age = ddc_alk,
-                                slope_survey = tables$slope_survey)
-  VAST_ddc_alk <- VAST_files$VAST_ddc_alk %>% 
-    filter(Age >= 1) # check
-  
-  if(VAST_files$encounter_rate == FALSE) {print("no years with 100% encounter rate")
-  }else{print("there are years with 100% encounter rate")}
-  
-  print(paste0("check table: sample sizes for each age should be the same"))
-  print(table(VAST_ddc_alk$Age)) #check that sample size is same for each!
-  
-  ## Write out tables for VAST ------------------------------------------------
-  write_csv(VAST_files$VAST_ddc_table,  # Biomass for EBS + NBS together - dd correction 
-            here(output, paste0("VAST_ddc_all", file_end)))
-  write_csv(VAST_files$VAST_ddc_table_EBS,  # Biomass for just EBS - dd correction
-            here(output, paste0("VAST_ddc_EBSonly", file_end)))
-  write_csv(VAST_files$VAST_ddc_table_NBS,  # Biomass for just NBS - dd correction
-            here(output, paste0("VAST_ddc_NBSonly", file_end)))
-  write_csv(VAST_ddc_alk,  # Age comps for EBS + NBS together - dd correction
-            here(output, paste0("VAST_ddc_alk", file_end)))
-}
 
-if(estimate_ages == TRUE) {
-  VAST_files <- make_VAST_input_noage(hauls = hauls_survey,
-                                      spec = pollock_specimen,
-                                      ddc_index = ddc_table,
-                                      slope_survey = tables$slope_survey)
+if(data_type == "mb" {
+  if(estimate_ages == FALSE) {
+    VAST_files <- make_VAST_input(hauls = hauls_survey,
+                                  spec = pollock_specimen,
+                                  ddc_index = ddc_table,
+                                  ddc_age = ddc_alk,
+                                  slope_survey = tables$slope_survey)
+    VAST_ddc_alk <- VAST_files$VAST_ddc_alk %>% 
+      filter(Age >= 1) # check
+    
+    if(VAST_files$encounter_rate == FALSE) {print("no years with 100% encounter rate")
+    }else{print("there are years with 100% encounter rate")}
+    
+    print(paste0("check table: sample sizes for each age should be the same"))
+    print(table(VAST_ddc_alk$Age)) #check that sample size is same for each!
+    
+    ## Write out tables for VAST ------------------------------------------------
+    write_csv(VAST_files$VAST_ddc_table,  # Biomass for EBS + NBS together - dd correction 
+              here(output, paste0("VAST_ddc_all", file_end)))
+    write_csv(VAST_files$VAST_ddc_table_EBS,  # Biomass for just EBS - dd correction
+              here(output, paste0("VAST_ddc_EBSonly", file_end)))
+    write_csv(VAST_files$VAST_ddc_table_NBS,  # Biomass for just NBS - dd correction
+              here(output, paste0("VAST_ddc_NBSonly", file_end)))
+    write_csv(VAST_ddc_alk,  # Age comps for EBS + NBS together - dd correction
+              here(output, paste0("VAST_ddc_alk", file_end)))
+  }
   
-  if(VAST_files$encounter_rate == FALSE) {print("no years with 100% encounter rate")
-  }else{print("there are years with 100% encounter rate")}
-  
-  ## Write out tables for VAST ------------------------------------------------
-  write_csv(VAST_files$VAST_ddc_table,  # Biomass for EBS + NBS together - dd correction 
-            here(output, paste0("VAST_ddc_all", file_end)))
-  write_csv(VAST_files$VAST_ddc_table_EBS,  # Biomass for just EBS - dd correction
-            here(output, paste0("VAST_ddc_EBSonly", file_end)))
-  write_csv(VAST_files$VAST_ddc_table_NBS,  # Biomass for just NBS - dd correction
-            here(output, paste0("VAST_ddc_NBSonly", file_end)))
-  write_csv(VAST_ddc_alk,  # Age comps for EBS + NBS together - dd correction
-            here(output, paste0("VAST_ddc_alk", file_end)))
-}
-
+  if(estimate_ages == TRUE) {
+    VAST_files <- make_VAST_input_noage(hauls = hauls_survey,
+                                        spec = pollock_specimen,
+                                        ddc_index = ddc_table,
+                                        slope_survey = tables$slope_survey)
+    
+    if(VAST_files$encounter_rate == FALSE) {print("no years with 100% encounter rate")
+    }else{print("there are years with 100% encounter rate")}
+    
+    ## Write out tables for VAST ------------------------------------------------
+    write_csv(VAST_files$VAST_ddc_table,  # Biomass for EBS + NBS together - dd correction 
+              here(output, paste0("VAST_ddc_all", file_end)))
+    write_csv(VAST_files$VAST_ddc_table_EBS,  # Biomass for just EBS - dd correction
+              here(output, paste0("VAST_ddc_EBSonly", file_end)))
+    write_csv(VAST_files$VAST_ddc_table_NBS,  # Biomass for just NBS - dd correction
+              here(output, paste0("VAST_ddc_NBSonly", file_end)))
+    write_csv(VAST_ddc_alk,  # Age comps for EBS + NBS together - dd correction
+              here(output, paste0("VAST_ddc_alk", file_end)))
+  }
+})
 
 # Save design-based results ---------------------------------------------------
 # CIA: note to separate out EBS and NBS: NBS_subarea for stratum values; I set subarea of NBS = 0; all other values are EBS
