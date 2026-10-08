@@ -18,14 +18,15 @@ drive_user()  # check user account
 # Upload results directory to google drive ------------------------------------
 # Access drive folder via the string at the end of the URL (click into it in google drive)
 # MUST CREATE A NEW FOLDER IN GOOGLE DRIVE FIRST, THEN COPY THE STRING HERE
-drive_folder <- as_id("1SATlJzi3XjDyq4YBLznP7plc5OXs8BSA")  
+drive_folder <- as_id("17078qTWGTm-mNaRGiD8uU-TIdAxfYd3v")  
 
 # List local files in the results directory 
 # DOUBLE-CHECK THAT THIS IS THE RIGHT DIRECTORY
-results_files <- list.files(here("output", "2026-09-25_db"), full.names = TRUE)
+# files <- list.files(here("output", "2026-09-25_db"), full.names = TRUE)  # results
+files <- list.files(here("data", "2026-10-07_mb"), full.names = TRUE)  # data
 
 # Upload all files to google drive
-walk(results_files, ~ drive_upload(
+walk(files, ~ drive_upload(
   media = .x,
   path = drive_folder,
   overwrite = TRUE # replace existing files?
