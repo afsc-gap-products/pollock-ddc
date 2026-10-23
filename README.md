@@ -25,31 +25,13 @@ This repository contains R code to apply the Kotwicki et al. (2014) density-depe
 
 ---
 
-## Application Structure
-
-The project is organized around a small set of R scripts and supporting directories:
-
-### Core analysis scripts
+## Structure
 
 - `R/Density_Dep_estimates_MAIN.R`  
   Runs the main density-dependent correction workflow.
 
-- `R/plot_ddc_effect.R`  
-  Produces diagnostic plots for the density-dependent correction.
-
-- `R/plot_db_index.R`  
-  Generates design-based index plots.
-
-- `R/plot_comps.R`  
-  Produces composition and size-structure figures.
-
-### Supporting project files
-
 - `R/functions/`  
   Contains helper functions for data processing, CPUE, biomass, age/length composition, and diagnostics.
-
-- `from_stan/`  
-  Stores Stan-derived outputs used in the correction process.
 
 - `output/`  
   Stores generated results, tables, and figures.
