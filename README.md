@@ -21,9 +21,7 @@ Seattle, WA 98195
 
 ## Overview
 
-This repository contains R code to apply a density-dependent correction (DDC) to pollock survey data based on the Kotwicki et al. (2014) method. The workflow combines survey haul data, catch/length/specimen information, and model-based output to estimate corrected CPUE, biomass, and age/length-composition summaries for eastern Bering Sea pollock.
-
-The analysis focuses on correcting survey indices for density dependence in the relationship between backscatter and fish density, and then producing downstream outputs for assessment support and diagnostic plotting.
+This repository contains R code to apply the Kotwicki et al. (2014) density-dependent correction to pollock survey data. The workflow estimates corrected CPUE, biomass, and age/length compositions for eastern Bering Sea pollock using survey haul, catch, length, and specimen data.
 
 ---
 
@@ -34,47 +32,41 @@ The project is organized around a small set of R scripts and supporting director
 ### Core analysis scripts
 
 - `R/Density_Dep_estimates_MAIN.R`  
-  Runs the main density-dependent correction workflow, including data processing, corrected CPUE/biomass estimation, and output generation.
+  Runs the main density-dependent correction workflow.
 
 - `R/plot_ddc_effect.R`  
-  Produces plots illustrating the density-dependent correction effect and related diagnostics.
+  Produces diagnostic plots for the density-dependent correction.
 
 - `R/plot_db_index.R`  
-  Generates plots for design-based index summaries and comparisons.
+  Generates design-based index plots.
 
 - `R/plot_comps.R`  
-  Produces composition and size-structure diagnostic figures.
-
-- `R/drive_upload.R`  
-  Provides utilities for uploading generated outputs to Google Drive.
+  Produces composition and size-structure figures.
 
 ### Supporting project files
 
 - `R/functions/`  
-  Contains the helper functions used throughout the workflow for data retrieval, CPUE calculations, population estimates, bootstrap routines, and output preparation.
+  Contains helper functions for data processing, CPUE, biomass, age/length composition, and diagnostics.
 
 - `from_stan/`  
-  Stores external Stan-derived results used in the correction process, including `abc_exp.csv`.
+  Stores Stan-derived outputs used in the correction process.
 
 - `output/`  
-  Folder for generated model outputs, summaries, plots, and supporting tables.
-
-- `pollock-ddc.Rproj`  
-  RStudio project file for working within the repository environment.
+  Stores generated results, tables, and figures.
 
 ### General workflow
 
-- Prepare survey haul, catch, length, and specimen data  
-- Apply the density-dependent correction to CPUE and biomass estimates  
-- Derive corrected length and age composition summaries  
-- Generate diagnostics and comparison plots  
-- Save outputs for assessment use and reproducibility
+- Prepare haul, catch, length, and specimen data  
+- Apply the density-dependent correction  
+- Estimate corrected CPUE and biomass  
+- Generate age/length composition summaries  
+- Save diagnostic outputs and tables
 
 ---
 
 # NOAA README
 
-This repository is a scientific product and is not official communication of the National Oceanic and Atmospheric Administration, or the United States Department of Commerce. All NOAA GitHub project content is provided on an 'as is' basis and the user assumes responsibility for its use. Any reference to specific commercial products, processes, or services by service mark, trademark, manufacturer, or otherwise, does not constitute or imply their endorsement, recommendation, or favoring by the United States Government, Department of Commerce, or NOAA.
+This repository is a scientific product and is not official communication of the National Oceanic and Atmospheric Administration, or the United States Department of Commerce. All NOAA GitHub project content is provided on an "as is" basis. Any reference to specific commercial products, processes, or services by service mark, trademark, manufacturer, or otherwise, does not constitute or imply their endorsement, recommendation, or favoring by the United States Government, Department of Commerce, or NOAA.
 
 ---
 
@@ -82,7 +74,7 @@ This repository is a scientific product and is not official communication of the
 
 Software code created by U.S. Government employees is not subject to copyright in the United States (17 U.S.C. §105).
 
-The United States/Department of Commerce reserve all rights to seek and obtain copyright protection in countries other than the United States for Software authored in its entirety by the Department of Commerce employees.
+The United States/Department of Commerce reserve all rights to seek and obtain copyright protection in countries other than the United States for software authored in its entirety by Department of Commerce employees.
 
 ---
 
